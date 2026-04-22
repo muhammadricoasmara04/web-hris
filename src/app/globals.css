@@ -1,26 +1,156 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  --animate-fade-in: fade-in 1s ease-out forwards;
+  --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+:root {
+  --background: #fafafa;
+  --foreground: #09090b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --foreground: #ffffff;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), var(--font-sans), Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utility classes */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Gradient text */
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+}
+
+/* Base custom glow */
+.glow-effect {
+  position: absolute;
+  filter: blur(100px);
+  z-index: -1;
+  opacity: 0.5;
+}
+
+.leaflet-container {
+  background: linear-gradient(180deg, rgba(4, 9, 24, 0.96), rgba(8, 19, 41, 0.94));
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 18px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(5, 10, 22, 0.4) !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(10, 16, 32, 0.78) !important;
+  color: #e5f3ff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(7, 17, 32, 0.8) !important;
+  color: rgba(226, 232, 240, 0.8) !important;
+  backdrop-filter: blur(10px);
+}
+
+.leaflet-control-attribution a {
+  color: #7dd3fc !important;
+}
+
+.current-location-marker {
+  background: transparent;
+  border: 0;
+}
+
+.current-location-marker__core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+}
+
+.current-location-marker__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.28);
+  animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.current-location-marker__dot {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #38bdf8, #8b5cf6);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.12), 0 10px 25px rgba(56, 189, 248, 0.35);
+}
+
+@keyframes ping {
+  75%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
 }
