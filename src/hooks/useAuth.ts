@@ -11,7 +11,15 @@ export function useAuth() {
 
   const mutation = useMutation<LoginResponse, Error, LoginPayload>({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Login Response Data:", data);
+      
+      // Simpan token ke localStorage
+      const token = data.token || data.accessToken;
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+      
       setSuccessMessage("Login berhasil. Mengarahkan ke dashboard karyawan...");
       router.push("/dashboard/employee");
     },
