@@ -6,10 +6,27 @@ export type LoginPayload = {
 };
 
 export type LoginResponse = {
+  success?: boolean;
   message?: string;
   token?: string;
   accessToken?: string;
   refreshToken?: string;
+  user?: unknown;
+  data?: {
+    token?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    user?: unknown;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+export type MeResponse = {
+  message?: string;
+  success?: boolean;
+  user?: unknown;
+  data?: unknown;
   [key: string]: unknown;
 };
 
@@ -33,6 +50,32 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
       responseData.message.trim().length > 0
         ? responseData.message
         : "Login gagal. Silakan cek email dan password.";
+
+    throw new Error(errorMessage);
+  }
+
+  return responseData ?? {};
+}
+
+export async function getMe(token: string): Promise<MeResponse> {
+  const response = await fetch(buildApiUrl("/api/auth/me"), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const responseData = (await response.json().catch(() => null)) as
+    | MeResponse
+    | null;
+
+  if (!response.ok) {
+    const errorMessage =
+      responseData &&
+      typeof responseData.message === "string" &&
+      responseData.message.trim().length > 0
+        ? responseData.message
+        : "Akses ditolak. Silakan login ulang.";
 
     throw new Error(errorMessage);
   }

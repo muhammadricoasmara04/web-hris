@@ -4,7 +4,9 @@ import { CurrentDate, DigitalClock } from "@/components/attendance/digital-clock
 import { ProfileHeader } from "@/components/attendance/profile-header";
 import { CurrentLocationMap } from "@/components/maps/current-location-map";
 import { EMPLOYEE_ATTENDANCE_COLORS } from "@/constants/colors";
+import { modal } from "@/constants/modal";
 import { useCurrentLocation } from "@/hooks/maps/use-current-location";
+import { getMe } from "@/services/authService";
 import { checkIn } from "@/services/attendanceService";
 import { useMutation } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Loader2, LogIn, LogOut } from "lucide-react";
@@ -17,25 +19,43 @@ export default function EmployeeAttendancePage() {
 
   const mutation = useMutation({
     mutationFn: checkIn,
-    onSuccess: (data) => {
-      alert(data.message || "Berhasil Clock In!");
-    },
-    onError: (error: Error) => {
-      alert(error.message || "Gagal melakukan absensi.");
-    },
   });
 
-  const handleClockIn = () => {
+  const handleClockIn = async () => {
     if (locationLoading) {
-      alert("Sedang mengambil lokasi, mohon tunggu...");
+      await modal.info("Lokasi belum siap", "Sedang mengambil lokasi, mohon tunggu...");
       return;
     }
-    mutation.mutate({
-      latitude: coordinates.lat,
-      longitude: coordinates.lng,
-      type: "in",
-    });
+
+    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+    if (!token) {
+      await modal.error("Belum login", "Sesi login tidak ditemukan. Silakan login ulang.");
+      return;
+    }
+
+    try {
+      await getMe(token);
+
+      const data = await mutation.mutateAsync({
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
+        type: "in",
+      });
+
+      await modal.success("Absensi berhasil", data.message || "Berhasil Clock In!");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Gagal melakukan absensi.";
+      const isUnauthorized = /akses ditolak|unauthorized|token|login/i.test(message);
+
+      await modal.error(
+        isUnauthorized ? "Akses ditolak" : "Absensi gagal",
+        isUnauthorized
+          ? "Sesi kamu kemungkinan sudah tidak valid. Silakan login ulang."
+          : message,
+      );
+    }
   };
+
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: colors.screen.base }}>

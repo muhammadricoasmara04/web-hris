@@ -13,16 +13,31 @@ export function useAuth() {
     mutationFn: login,
     onSuccess: (data) => {
       console.log("Login Response Data:", data);
-      
-      // Simpan token ke localStorage
-      const token = data.token || data.accessToken;
+
+      // Support response: { token } atau { data: { token } }
+      const token = data.token || data.accessToken || data.data?.token || data.data?.accessToken;
+      const refreshToken = data.refreshToken || data.data?.refreshToken;
+      const user = data.user || data.data?.user;
+
       if (token) {
         localStorage.setItem("token", token);
+        localStorage.setItem("accessToken", token);
+      } else {
+        console.warn("[useAuth] Login sukses tapi token tidak ditemukan di response.");
       }
-      
+
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
+
+      if (user) {
+        localStorage.setItem("authUser", JSON.stringify(user));
+      }
+
       setSuccessMessage("Login berhasil. Mengarahkan ke dashboard karyawan...");
       router.push("/dashboard/employee");
     },
+
     onError: () => {
       setSuccessMessage("");
     },

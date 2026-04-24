@@ -84,11 +84,10 @@ function SidebarMenuItem({
         id={item.id}
         href={item.href}
         onClick={onNavigate}
-        className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-          active
-            ? "bg-sky-400/20 text-sky-100 shadow-[0_0_0_1px_rgba(56,189,248,0.35)]"
-            : "text-zinc-300 hover:bg-white/10 hover:text-white"
-        }`}
+        className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${active
+          ? "bg-sky-400/20 text-sky-100 shadow-[0_0_0_1px_rgba(56,189,248,0.35)]"
+          : "text-zinc-300 hover:bg-white/10 hover:text-white"
+          }`}
       >
         <Icon className="h-4 w-4" />
         <span>{item.label}</span>
@@ -140,15 +139,13 @@ export function DashboardSidebar() {
         type="button"
         aria-label="Close sidebar overlay"
         onClick={() => setIsOpen(false)}
-        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition lg:hidden ${
-          isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-        }`}
+        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition lg:hidden ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          }`}
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[280px] shrink-0 border-r border-white/10 bg-[#050816]/90 p-4 backdrop-blur-xl transition-transform duration-300 lg:sticky lg:translate-x-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-[280px] shrink-0 border-r border-white/10 bg-[#050816]/90 p-4 backdrop-blur-xl transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex h-full flex-col gap-6">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
