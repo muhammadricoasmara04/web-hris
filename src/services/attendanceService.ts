@@ -1,4 +1,5 @@
 import { buildApiUrl } from "@/api/api";
+import { authFetch } from "@/services/authClient";
 
 export type CheckInPayload = {
   latitude: number;
@@ -13,16 +14,10 @@ export type CheckInResponse = {
 };
 
 export async function checkIn(payload: CheckInPayload): Promise<CheckInResponse> {
-  const token = localStorage.getItem("token");
-  
-  // Debug log untuk melihat apakah token terambil
-  console.log("Memulai Check-In dengan token:", token ? "Token ada (tersimpan)" : "Token KOSONG");
-
-  const response = await fetch(buildApiUrl("/api/attendance/check-in"), {
+  const response = await authFetch(buildApiUrl("/api/attendance/check-in"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token || ""}`,
     },
     body: JSON.stringify(payload),
   });

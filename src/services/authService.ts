@@ -1,4 +1,5 @@
 import { buildApiUrl } from "@/api/api";
+import { authFetch } from "@/services/authClient";
 
 export type LoginPayload = {
   email: string;
@@ -57,12 +58,9 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
   return responseData ?? {};
 }
 
-export async function getMe(token: string): Promise<MeResponse> {
-  const response = await fetch(buildApiUrl("/api/auth/me"), {
+export async function getMe(): Promise<MeResponse> {
+  const response = await authFetch(buildApiUrl("/api/auth/me"), {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
   const responseData = (await response.json().catch(() => null)) as

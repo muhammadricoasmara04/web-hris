@@ -27,14 +27,8 @@ export default function EmployeeAttendancePage() {
       return;
     }
 
-    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
-    if (!token) {
-      await modal.error("Belum login", "Sesi login tidak ditemukan. Silakan login ulang.");
-      return;
-    }
-
     try {
-      await getMe(token);
+      await getMe();
 
       const data = await mutation.mutateAsync({
         latitude: coordinates.lat,

@@ -1,37 +1,56 @@
 "use client";
 
+import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
-import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useSyncExternalStore } from "react";
-
-const subscribeToAuthChanges = () => () => {};
-
-const getTokenSnapshot = (): string | null => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token") || localStorage.getItem("accessToken");
-};
+import { refreshAccessToken } from "@/services/authClient";
+import { getAuthGuardToken, subscribeAuthStorage } from "@/utils/auth-storage";
 
 const getServerTokenSnapshot = (): string | null => null;
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const token = useSyncExternalStore(
-    subscribeToAuthChanges,
-    getTokenSnapshot,
+    subscribeAuthStorage,
+    getAuthGuardToken,
     getServerTokenSnapshot,
   );
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   useEffect(() => {
-    if (!token) {
-      router.replace("/login");
-    }
+    let isActive = true;
+
+    const ensureSession = async () => {
+      if (token) {
+        if (isActive) setIsCheckingSession(false);
+        return;
+      }
+
+      const refreshedToken = await refreshAccessToken();
+
+      if (!isActive) return;
+
+      if (!refreshedToken) {
+        router.replace("/login");
+        return;
+      }
+
+      setIsCheckingSession(false);
+    };
+
+    void ensureSession();
+
+    return () => {
+      isActive = false;
+    };
   }, [token, router]);
 
-  if (!token) {
+  if (!token || isCheckingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050816] text-white/80">
-        Mengarahkan ke halaman login...
+        Memverifikasi sesi login...
       </div>
     );
   }

@@ -1,9 +1,11 @@
 "use client";
 
-import { login, type LoginPayload, type LoginResponse } from "@/services/authService";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { login, type LoginPayload, type LoginResponse } from "@/services/authService";
+import { persistAuthSession } from "@/utils/auth-storage";
 
 export function useAuth() {
   const router = useRouter();
@@ -20,18 +22,14 @@ export function useAuth() {
       const user = data.user || data.data?.user;
 
       if (token) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("accessToken", token);
+        persistAuthSession({
+          token,
+          accessToken: token,
+          refreshToken,
+          user,
+        });
       } else {
         console.warn("[useAuth] Login sukses tapi token tidak ditemukan di response.");
-      }
-
-      if (refreshToken) {
-        localStorage.setItem("refreshToken", refreshToken);
-      }
-
-      if (user) {
-        localStorage.setItem("authUser", JSON.stringify(user));
       }
 
       setSuccessMessage("Login berhasil. Mengarahkan ke dashboard karyawan...");

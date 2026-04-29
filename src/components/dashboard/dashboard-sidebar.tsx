@@ -24,33 +24,75 @@ type SidebarItem = {
   soon?: boolean;
 };
 
-const primaryItems: SidebarItem[] = [
-  {
-    id: "sidebar-link-admin-dashboard",
-    label: "Admin Dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard/admin",
-    soon: true,
-  },
-  {
-    id: "sidebar-link-users",
-    label: "Manajemen User",
-    icon: Users,
-    soon: true,
-  },
-  {
-    id: "sidebar-link-payroll",
-    label: "Payroll & Gaji",
-    icon: Wallet,
-    soon: true,
-  },
-  {
-    id: "sidebar-link-reports",
-    label: "Laporan Kehadiran",
-    icon: CalendarClock,
-    soon: true,
-  },
-];
+const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
+  admin: [
+    {
+      id: "sidebar-link-admin-dashboard",
+      label: "Admin Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard/admin",
+    },
+    {
+      id: "sidebar-link-users",
+      label: "Manajemen User",
+      icon: Users,
+      soon: true,
+    },
+    {
+      id: "sidebar-link-payroll",
+      label: "Payroll & Gaji",
+      icon: Wallet,
+      soon: true,
+    },
+    {
+      id: "sidebar-link-reports",
+      label: "Laporan Kehadiran",
+      icon: CalendarClock,
+      soon: true,
+    },
+  ],
+  hr: [
+    {
+      id: "sidebar-link-hr-dashboard",
+      label: "HR Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard/hr",
+      soon: true,
+    },
+    {
+      id: "sidebar-link-hr-employees",
+      label: "Data Karyawan",
+      icon: Users,
+      soon: true,
+    },
+    {
+      id: "sidebar-link-hr-attendance",
+      label: "Kehadiran Tim",
+      icon: CalendarClock,
+      soon: true,
+    },
+  ],
+  employee: [
+    {
+      id: "sidebar-link-employee-home",
+      label: "Dashboard Karyawan",
+      icon: LayoutDashboard,
+      href: "/dashboard/employee",
+    },
+    {
+      id: "sidebar-link-employee-attendance",
+      label: "Absensi Saya",
+      icon: CalendarClock,
+      href: "/dashboard/employee",
+    },
+    {
+      id: "sidebar-link-employee-payroll",
+      label: "Slip Gaji",
+      icon: Wallet,
+      soon: true,
+    },
+  ],
+};
 
 const systemItems: SidebarItem[] = [
   {
@@ -118,33 +160,39 @@ function SidebarMenuItem({
 export function DashboardSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const isEmployeeFlow = pathname.startsWith("/dashboard/employee");
+
+  const currentRole: "admin" | "hr" | "employee" = pathname.startsWith("/dashboard/employee")
+    ? "employee"
+    : pathname.startsWith("/dashboard/hr")
+      ? "hr"
+      : "admin";
+
+  const primaryItems = primaryItemsByRole[currentRole];
+  const roleLabel = currentRole === "employee" ? "Employee" : currentRole === "hr" ? "HR" : "Administrator";
 
   return (
     <>
-      {!isEmployeeFlow && (
-        <button
-          id="dashboard-mobile-menu-toggle"
-          type="button"
-          aria-label="Toggle sidebar"
-          onClick={() => setIsOpen((prev) => !prev)}
-          className="fixed left-4 top-4 z-50 inline-flex items-center justify-center rounded-xl border border-white/15 bg-black/40 p-2.5 text-white shadow-lg backdrop-blur-lg transition hover:bg-black/60 lg:hidden"
-        >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      )}
+      <button
+        id="dashboard-menu-toggle"
+        type="button"
+        aria-label="Toggle sidebar"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="fixed left-4 top-4 z-[760] hidden items-center justify-center rounded-xl border border-white/15 bg-black/40 p-2.5 text-white shadow-lg backdrop-blur-lg transition hover:bg-black/60 md:inline-flex"
+      >
+        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
 
       <button
-        id="dashboard-mobile-sidebar-overlay"
+        id="dashboard-sidebar-overlay"
         type="button"
         aria-label="Close sidebar overlay"
         onClick={() => setIsOpen(false)}
-        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition lg:hidden ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        className={`fixed inset-0 z-[730] bg-black/70 backdrop-blur-sm transition ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[280px] shrink-0 border-r border-white/10 bg-[#050816]/90 p-4 backdrop-blur-xl transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-[750] w-[280px] border-r border-white/10 bg-[#050816]/90 p-4 backdrop-blur-xl transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         <div className="flex h-full flex-col gap-6">
@@ -184,7 +232,7 @@ export function DashboardSidebar() {
 
           <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm text-zinc-300">Logged in as</p>
-            <p className="mt-1 text-base font-semibold text-white">Administrator</p>
+            <p className="mt-1 text-base font-semibold text-white">{roleLabel}</p>
             <Link
               id="dashboard-logout-link"
               href="/login"

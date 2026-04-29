@@ -1,6 +1,7 @@
 "use client";
 
 import { getMe } from "@/services/authService";
+import { getAuthGuardToken } from "@/utils/auth-storage";
 import { Bell, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -40,12 +41,12 @@ export function ProfileHeader() {
   const [displayName, setDisplayName] = useState("User");
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
-    console.log("[ProfileHeader] token status:", token ? "LOGIN (token ada)" : "BELUM LOGIN (token kosong)");
+    const sessionToken = getAuthGuardToken();
+    console.log("[ProfileHeader] session status:", sessionToken ? "LOGIN (session ada)" : "BELUM LOGIN (session kosong)");
 
-    if (!token) return;
+    if (!sessionToken) return;
 
-    void getMe(token)
+    void getMe()
       .then((response) => {
         console.log("[ProfileHeader] /api/auth/me response:", response);
         const resolvedName = extractDisplayName(response);
