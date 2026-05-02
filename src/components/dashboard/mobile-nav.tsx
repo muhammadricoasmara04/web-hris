@@ -1,6 +1,6 @@
 "use client";
 
-import { History, Home, MapPinned, User } from "lucide-react";
+import { CalendarPlus2, History, Home, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,21 +11,19 @@ const navItems = [
     href: "/dashboard/employee",
   },
   {
-    label: "Absen",
-    icon: MapPinned,
-    href: "/dashboard/employee#employee-attendance-map",
+    label: "Cuti",
+    icon: CalendarPlus2,
+    href: "/dashboard/leave",
   },
   {
     label: "History",
     icon: History,
-    href: "/dashboard/history",
-    soon: true,
+    href: "/dashboard/historyattendance",
   },
   {
     label: "Profil",
     icon: User,
     href: "/dashboard/profile",
-    soon: true,
   },
 ];
 

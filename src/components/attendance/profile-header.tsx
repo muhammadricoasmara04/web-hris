@@ -3,6 +3,7 @@
 import { getMe } from "@/services/authService";
 import { getAuthGuardToken } from "@/utils/auth-storage";
 import { Bell, User } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type MePayload = {
@@ -61,7 +62,7 @@ export function ProfileHeader() {
 
   return (
     <header className="fixed left-0 top-0 z-[500] flex w-full items-center justify-between p-4 px-6 pt-10">
-      <div className="flex items-center gap-3 rounded-full border border-white/20 bg-white/10 p-1.5 pr-5 backdrop-blur-xl shadow-lg">
+      <Link href="/dashboard/profile" className="flex items-center gap-3 rounded-full border border-white/20 bg-white/10 p-1.5 pr-5 backdrop-blur-xl shadow-lg transition hover:bg-white/15 active:scale-95">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white border border-white/30 overflow-hidden shadow-inner">
           <User className="h-6 w-6" />
         </div>
@@ -69,7 +70,7 @@ export function ProfileHeader() {
           <span className="text-sm font-bold text-white tracking-tight">{displayName}</span>
           <span className="text-[10px] font-semibold text-white/60 uppercase tracking-widest">User/Karyawan</span>
         </div>
-      </div>
+      </Link>
 
       <button className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-xl transition active:scale-95 shadow-lg">
         <Bell className="h-5 w-5" />

@@ -1,54 +1,176 @@
 "use client";
 
+import Link from "next/link";
 import { CurrentDate, DigitalClock } from "@/components/attendance/digital-clock";
 import { ProfileHeader } from "@/components/attendance/profile-header";
 import { CurrentLocationMap } from "@/components/maps/current-location-map";
 import { EMPLOYEE_ATTENDANCE_COLORS } from "@/constants/colors";
 import { modal } from "@/constants/modal";
 import { useCurrentLocation } from "@/hooks/maps/use-current-location";
-import { getMe } from "@/services/authService";
-import { checkIn } from "@/services/attendanceService";
-import { useMutation } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Loader2, LogIn, LogOut } from "lucide-react";
-import { useState } from "react";
+import { useAttendance, type AttendanceMode } from "@/hooks/attendance/use-attendance";
+import { AttendanceHistoryItem } from "@/services/attendanceService";
+import { Loader2, LogIn, LogOut, ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+type AttendanceProgress = "not_checked_in" | "checked_in" | "checked_out";
 
 export default function EmployeeAttendancePage() {
   const { coordinates, loading: locationLoading } = useCurrentLocation();
   const [expanded, setExpanded] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const colors = EMPLOYEE_ATTENDANCE_COLORS;
 
-  const mutation = useMutation({
-    mutationFn: checkIn,
-  });
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowTick(Date.now());
+    }, 30_000);
 
-  const handleClockIn = async () => {
-    if (locationLoading) {
-      await modal.info("Lokasi belum siap", "Sedang mengambil lokasi, mohon tunggu...");
-      return;
-    }
+    return () => window.clearInterval(intervalId);
+  }, []);
 
-    try {
-      await getMe();
+  const {
+    historyQuery,
+    isSubmitting,
+    handleAttendanceSubmit,
+    clockInMutation,
+    clockOutMutation,
+  } = useAttendance({ coordinates, locationLoading });
 
-      const data = await mutation.mutateAsync({
-        latitude: coordinates.lat,
-        longitude: coordinates.lng,
-        type: "in",
-      });
+  const formatHistoryTime = (item: AttendanceHistoryItem) => {
+    const raw = item.checkInTime || item.checkOutTime || item.time || item.createdAt;
+    if (!raw) return "-";
 
-      await modal.success("Absensi berhasil", data.message || "Berhasil Clock In!");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Gagal melakukan absensi.";
-      const isUnauthorized = /akses ditolak|unauthorized|token|login/i.test(message);
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return String(raw);
 
-      await modal.error(
-        isUnauthorized ? "Akses ditolak" : "Absensi gagal",
-        isUnauthorized
-          ? "Sesi kamu kemungkinan sudah tidak valid. Silakan login ulang."
-          : message,
-      );
-    }
+    return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   };
+
+  const formatHistoryLocation = (item: AttendanceHistoryItem) => {
+    if (item.locationName || item.location) {
+      return String(item.locationName || item.location);
+    }
+
+    const lat =
+      typeof item.lat === "number"
+        ? item.lat
+        : typeof item.latitude === "number"
+          ? item.latitude
+          : null;
+
+    const lng =
+      typeof item.lng === "number"
+        ? item.lng
+        : typeof item.longitude === "number"
+          ? item.longitude
+          : null;
+
+    if (lat !== null && lng !== null) {
+      return `Lat ${lat.toFixed(6)}, Lng ${lng.toFixed(6)}`;
+    }
+
+    return "Lokasi tidak tersedia";
+  };
+
+  const getWibDateKey = (value: string | Date) => {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+
+    const year = parts.find((part) => part.type === "year")?.value;
+    const month = parts.find((part) => part.type === "month")?.value;
+    const day = parts.find((part) => part.type === "day")?.value;
+
+    if (!year || !month || !day) return null;
+    return `${year}-${month}-${day}`;
+  };
+
+  const getHistoryWibDateKey = (item: AttendanceHistoryItem) => {
+    const raw = item.createdAt || item.checkInTime || item.checkOutTime || item.time;
+    if (!raw) return null;
+    return getWibDateKey(raw);
+  };
+
+  const getAttendanceMode = (item: AttendanceHistoryItem): AttendanceMode | null => {
+    const itemType = String(item.type || "").toLowerCase();
+
+    if (itemType === "out" || itemType.includes("pulang") || itemType.includes("clock out") || Boolean(item.checkOutTime)) {
+      return "out";
+    }
+
+    if (itemType === "in" || itemType.includes("masuk") || itemType.includes("clock in") || Boolean(item.checkInTime)) {
+      return "in";
+    }
+
+    return null;
+  };
+
+
+
+  const attendanceProgress = useMemo<AttendanceProgress>(() => {
+    const items = historyQuery.data ?? [];
+    const todayWibKey = getWibDateKey(new Date(nowTick));
+
+    const todayItems = todayWibKey
+      ? items.filter((item) => getHistoryWibDateKey(item) === todayWibKey)
+      : [];
+
+    const hasClockOut = todayItems.some((item) => getAttendanceMode(item) === "out");
+    if (hasClockOut) return "checked_out";
+
+    const hasClockIn = todayItems.some((item) => getAttendanceMode(item) === "in");
+    return hasClockIn ? "checked_in" : "not_checked_in";
+  }, [historyQuery.data, nowTick]);
+
+
+  const isCheckedOut = attendanceProgress === "checked_out";
+  const shouldShowClockOutAction = attendanceProgress === "checked_in";
+
+  const handleClockIn = () => handleAttendanceSubmit("in");
+  const handleClockOut = () => handleAttendanceSubmit("out");
+
+  const activeActionLabel = shouldShowClockOutAction ? "Clock Out" : "Clock In";
+  const activeActionSubLabel = shouldShowClockOutAction ? "Pulang Kerja" : "Masuk Kerja";
+  const activeActionHandler = shouldShowClockOutAction ? handleClockOut : handleClockIn;
+  const activeActionPending = shouldShowClockOutAction ? clockOutMutation.isPending : clockInMutation.isPending;
+  const activeActionStyles = shouldShowClockOutAction ? colors.actions.clockOut : colors.actions.clockIn;
+
+  const latestHistoryItems = useMemo(() => {
+    const items = historyQuery.data ?? [];
+    
+    // We want to unroll items that have both checkInTime and checkOutTime 
+    // into two separate entries so they show up as two cards.
+    const unrolled: AttendanceHistoryItem[] = [];
+    
+    items.forEach((item) => {
+      const hasIn = Boolean(item.checkInTime);
+      const hasOut = Boolean(item.checkOutTime);
+      
+      if (hasIn && hasOut) {
+        // Create two virtual items
+        unrolled.push({ ...item, type: "in", time: item.checkInTime, _virtualType: "in" });
+        unrolled.push({ ...item, type: "out", time: item.checkOutTime, _virtualType: "out" });
+      } else {
+        unrolled.push(item);
+      }
+    });
+
+    return [...unrolled]
+      .sort((a, b) => {
+        const aTimeStr = a.time || a.createdAt || a.checkInTime || a.checkOutTime;
+        const bTimeStr = b.time || b.createdAt || b.checkInTime || b.checkOutTime;
+        const aTime = aTimeStr ? new Date(aTimeStr).getTime() : 0;
+        const bTime = bTimeStr ? new Date(bTimeStr).getTime() : 0;
+        return aTime - bTime; // Oldest first (In -> Out)
+      })
+      .slice(-2); // Take the last 2 items (latest 2 actions)
+  }, [historyQuery.data]);
 
 
   return (
@@ -111,37 +233,34 @@ export default function EmployeeAttendancePage() {
                   <CurrentDate />
                 </div>
 
-                <div className="mt-5 grid w-full grid-cols-2 gap-3 px-2">
-                  <button
-                    onClick={handleClockIn}
-                    disabled={mutation.isPending}
-                    className="flex h-20 flex-col items-center justify-center gap-1 rounded-[24px] p-3 transition active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                    style={{
-                      background: colors.actions.clockIn.background,
-                      color: colors.actions.clockIn.text,
-                      boxShadow: colors.actions.clockIn.shadow,
-                    }}
-                  >
-                    {mutation.isPending ? (
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    ) : (
-                      <>
-                        <span className="text-lg font-extrabold tracking-tight">Clock In</span>
-                        <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">Masuk Kerja</span>
-                      </>
-                    )}
-                  </button>
-                  <button
-                    className="flex h-20 flex-col items-center justify-center gap-1 rounded-[24px] p-3 transition active:scale-95"
-                    style={{
-                      background: colors.actions.clockOut.background,
-                      color: colors.actions.clockOut.text,
-                      boxShadow: colors.actions.clockOut.shadow,
-                    }}
-                  >
-                    <span className="text-lg font-extrabold tracking-tight">Clock Out</span>
-                    <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">Pulang Kerja</span>
-                  </button>
+                <div className="mt-5 w-full px-2">
+                  {isCheckedOut ? (
+                    <div
+                      className="rounded-[24px] border border-emerald-300/30 bg-emerald-400/10 p-5 text-center text-sm font-semibold text-emerald-100"
+                    >
+                      Terimakasih Sudah bekerja kerasa hari ini, sampai bertemu di hari selanjutnya
+                    </div>
+                  ) : (
+                    <button
+                      onClick={activeActionHandler}
+                      disabled={isSubmitting}
+                      className="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-[24px] p-3 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                      style={{
+                        background: activeActionStyles.background,
+                        color: activeActionStyles.text,
+                        boxShadow: activeActionStyles.shadow,
+                      }}
+                    >
+                      {activeActionPending ? (
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      ) : (
+                        <>
+                          <span className="text-lg font-extrabold tracking-tight">{activeActionLabel}</span>
+                          <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">{activeActionSubLabel}</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 {/* Recent History Section */}
@@ -153,93 +272,141 @@ export default function EmployeeAttendancePage() {
                     >
                       Riwayat Hari Ini
                     </p>
-                    <button
+                    <Link
+                      id="employee-history-view-all-link"
+                      href="/dashboard/historyattendance"
                       className="text-[10px] font-bold uppercase tracking-wider"
                       style={{ color: colors.history.viewAll }}
                     >
                       Lihat Semua
-                    </button>
+                    </Link>
                   </div>
 
                   <div className="space-y-2.5">
-                    <div
-                      className="flex items-center justify-between rounded-2xl border p-4 backdrop-blur-sm shadow-sm"
-                      style={{
-                        background: colors.history.card.background,
-                        borderColor: colors.history.card.border,
-                      }}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm"
-                          style={{
-                            background: colors.history.iconIn.background,
-                            color: colors.history.iconIn.text,
-                          }}
-                        >
-                          <LogIn className="h-5 w-5" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold leading-none" style={{ color: colors.history.card.title }}>Check In</span>
-                          <span className="mt-1 text-[10px] font-medium" style={{ color: colors.history.card.subtitle }}>Kantor Pusat</span>
-                        </div>
+                    {historyQuery.isLoading ? (
+                      <div
+                        className="flex items-center justify-center rounded-2xl border p-4 text-xs font-semibold"
+                        style={{
+                          background: colors.history.cardMuted.background,
+                          borderColor: colors.history.cardMuted.border,
+                          color: colors.history.cardMuted.subtitle,
+                        }}
+                      >
+                        Memuat riwayat...
                       </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-sm font-bold leading-none" style={{ color: colors.history.card.time }}>08:00</span>
-                        <span className="mt-1 text-[9px] font-bold uppercase tracking-tighter" style={{ color: colors.history.card.status }}>
-                          On Time
-                        </span>
+                    ) : historyQuery.isError ? (
+                      <div
+                        className="flex items-center justify-center rounded-2xl border p-4 text-xs font-semibold"
+                        style={{
+                          background: colors.history.cardMuted.background,
+                          borderColor: colors.history.cardMuted.border,
+                          color: colors.history.cardMuted.subtitle,
+                        }}
+                      >
+                        Gagal mengambil histori.
                       </div>
-                    </div>
+                    ) : historyQuery.data && historyQuery.data.length > 0 ? (
+                      latestHistoryItems.map((item, index) => {
+                        // Use virtual type if available, otherwise detect
+                        const itemMode = item._virtualType || getAttendanceMode(item);
+                        const isClockIn = itemMode !== "out";
 
-                    <div
-                      className="flex items-center justify-between rounded-2xl border p-4 backdrop-blur-sm opacity-70"
-                      style={{
-                        background: colors.history.cardMuted.background,
-                        borderColor: colors.history.cardMuted.border,
-                      }}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className="flex h-10 w-10 items-center justify-center rounded-xl"
-                          style={{
-                            background: colors.history.iconOut.background,
-                            color: colors.history.iconOut.text,
-                          }}
-                        >
-                          <LogOut className="h-5 w-5" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold leading-none italic" style={{ color: colors.history.cardMuted.title }}>Check Out</span>
-                          <span className="mt-1 text-[10px] font-medium" style={{ color: colors.history.cardMuted.subtitle }}>Belum dilakukan</span>
+                        return (
+                          <div
+                            key={String(item.id ?? `${itemMode ?? "unknown"}-${index}`)}
+                            className="flex items-center justify-between rounded-2xl border p-4 backdrop-blur-sm shadow-sm"
+                            style={{
+                              background: isClockIn ? colors.history.card.background : colors.history.cardMuted.background,
+                              borderColor: isClockIn ? colors.history.card.border : colors.history.cardMuted.border,
+                              opacity: isClockIn ? 1 : 0.85,
+                            }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div
+                                className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm"
+                                style={{
+                                  background: isClockIn ? colors.history.iconIn.background : colors.history.iconOut.background,
+                                  color: isClockIn ? colors.history.iconIn.text : colors.history.iconOut.text,
+                                }}
+                              >
+                                {isClockIn ? <LogIn className="h-5 w-5" /> : <LogOut className="h-5 w-5" />}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold leading-none" style={{ color: isClockIn ? colors.history.card.title : colors.history.cardMuted.title }}>
+                                  {isClockIn ? "Check In" : "Check Out"}
+                                </span>
+                                <span className="mt-1 text-[10px] font-medium" style={{ color: isClockIn ? colors.history.card.subtitle : colors.history.cardMuted.subtitle }}>
+                                  {formatHistoryLocation(item)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-sm font-bold leading-none" style={{ color: isClockIn ? colors.history.card.time : colors.history.cardMuted.title }}>
+                                {formatHistoryTime(item)}
+                              </span>
+                              <span className="mt-1 text-[9px] font-bold uppercase tracking-tighter" style={{ color: isClockIn ? colors.history.card.status : colors.history.cardMuted.subtitle }}>
+                                {String(item.status || (isClockIn ? "On Time" : "Done"))}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div
+                        className="flex items-center justify-between rounded-2xl border p-4 backdrop-blur-sm opacity-70"
+                        style={{
+                          background: colors.history.cardMuted.background,
+                          borderColor: colors.history.cardMuted.border,
+                        }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="flex h-10 w-10 items-center justify-center rounded-xl"
+                            style={{
+                              background: colors.history.iconOut.background,
+                              color: colors.history.iconOut.text,
+                            }}
+                          >
+                            <LogOut className="h-5 w-5" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold leading-none italic" style={{ color: colors.history.cardMuted.title }}>Belum ada histori</span>
+                            <span className="mt-1 text-[10px] font-medium" style={{ color: colors.history.cardMuted.subtitle }}>Silakan lakukan absensi terlebih dulu</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
             ) : (
               /* COLLAPSED VIEW */
               <div className="mt-1 flex items-center justify-between gap-4">
-                <button
-                  onClick={handleClockIn}
-                  disabled={mutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-3 rounded-[24px] py-5 transition active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                  style={{
-                    background: colors.actions.clockIn.background,
-                    color: colors.actions.clockIn.text,
-                    boxShadow: colors.actions.clockIn.shadow,
-                  }}
-                >
-                  {mutation.isPending ? (
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : (
-                    <>
-                      <span className="text-xl font-bold">Clock In</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider opacity-70">Absen Masuk</span>
-                    </>
-                  )}
-                </button>
+                {isCheckedOut ? (
+                  <div className="flex-1 rounded-[24px] border border-emerald-300/30 bg-emerald-400/10 px-4 py-4 text-left text-xs font-semibold text-emerald-100">
+                    Terimakasih Sudah bekerja kerasa hari ini, sampai bertemu di hari selanjutnya
+                  </div>
+                ) : (
+                  <button
+                    onClick={activeActionHandler}
+                    disabled={isSubmitting}
+                    className="flex-1 flex items-center justify-center gap-3 rounded-[24px] py-5 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                    style={{
+                      background: activeActionStyles.background,
+                      color: activeActionStyles.text,
+                      boxShadow: activeActionStyles.shadow,
+                    }}
+                  >
+                    {activeActionPending ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <>
+                        <span className="text-xl font-bold">{activeActionLabel}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider opacity-70">{activeActionSubLabel}</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 <div className="flex flex-col items-end pr-2">
                   <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: colors.collapsed.overline }}>Waktu & Tanggal</p>
                   <div style={{ color: colors.collapsed.time }}>

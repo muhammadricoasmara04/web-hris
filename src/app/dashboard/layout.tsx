@@ -18,6 +18,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     getServerTokenSnapshot,
   );
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -47,10 +52,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     };
   }, [token, router]);
 
-  if (!token || isCheckingSession) {
+  if (!mounted || !token || isCheckingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050816] text-white/80">
-        Memverifikasi sesi login...
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-sky-500 border-t-transparent" />
       </div>
     );
   }

@@ -15,6 +15,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getMe } from "@/services/authService";
 
 type SidebarItem = {
   id: string;
@@ -57,7 +59,12 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
       label: "HR Dashboard",
       icon: LayoutDashboard,
       href: "/dashboard/hr",
-      soon: true,
+    },
+    {
+      id: "sidebar-link-hr-to-employee",
+      label: "Akses Absen Karyawan",
+      icon: CalendarClock,
+      href: "/dashboard/employee",
     },
     {
       id: "sidebar-link-hr-employees",
@@ -69,7 +76,7 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
       id: "sidebar-link-hr-attendance",
       label: "Kehadiran Tim",
       icon: CalendarClock,
-      soon: true,
+      href: "/dashboard/hr/attendance",
     },
   ],
   employee: [
@@ -81,9 +88,21 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
     },
     {
       id: "sidebar-link-employee-attendance",
-      label: "Absensi Saya",
+      label: "Absen Hari Ini",
       icon: CalendarClock,
       href: "/dashboard/employee",
+    },
+    {
+      id: "sidebar-link-employee-leave",
+      label: "Pengajuan Cuti",
+      icon: CalendarClock,
+      href: "/dashboard/leave",
+    },
+    {
+      id: "sidebar-link-employee-history",
+      label: "Riwayat Absensi",
+      icon: CalendarClock,
+      href: "/dashboard/historyattendance",
     },
     {
       id: "sidebar-link-employee-payroll",
@@ -161,14 +180,35 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentRole: "admin" | "hr" | "employee" = pathname.startsWith("/dashboard/employee")
-    ? "employee"
-    : pathname.startsWith("/dashboard/hr")
-      ? "hr"
-      : "admin";
+  const { data: userData } = useQuery({
+    queryKey: ["profile-me"],
+    queryFn: getMe,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  const primaryItems = primaryItemsByRole[currentRole];
-  const roleLabel = currentRole === "employee" ? "Employee" : currentRole === "hr" ? "HR" : "Administrator";
+  // Extract display name
+  const rawUser = (userData?.data || userData?.user || userData) as any;
+  const displayName = rawUser?.fullname || rawUser?.name || rawUser?.fullName || rawUser?.username || "User";
+  
+  // Extract role from API, handle both string and object formats
+  let apiRole = "";
+  const roleData = rawUser?.role;
+  
+  if (typeof roleData === "string") {
+    apiRole = roleData.toLowerCase();
+  } else if (roleData && typeof roleData === "object") {
+    apiRole = String((roleData as any).name || "").toLowerCase();
+  } else if (rawUser?.roleName) {
+    apiRole = String(rawUser.roleName).toLowerCase();
+  }
+
+  const userRole: "admin" | "hr" | "employee" = 
+    apiRole.includes("admin") ? "admin" : 
+    (apiRole.includes("hr") || apiRole.includes("manager") || apiRole.includes("super")) ? "hr" : 
+    (pathname.startsWith("/dashboard/hr") ? "hr" : "employee");
+
+  const primaryItems = primaryItemsByRole[userRole];
+  const roleLabel = userRole === "admin" ? "Administrator" : userRole === "hr" ? "HR" : "Employee";
 
   return (
     <>
@@ -200,6 +240,17 @@ export function DashboardSidebar() {
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Web HRIS</p>
             <h2 className="mt-2 text-xl font-semibold text-white">HR & Admin Panel</h2>
             <p className="mt-1 text-xs text-zinc-400">Manage your workforce & system.</p>
+            
+            {userRole !== "employee" && (
+              <Link
+                href="/dashboard/hr"
+                onClick={() => setIsOpen(false)}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-400 active:scale-95"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Akses HRIS
+              </Link>
+            )}
           </div>
 
           <nav className="space-y-2" aria-label="Primary dashboard menu">
@@ -232,7 +283,8 @@ export function DashboardSidebar() {
 
           <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm text-zinc-300">Logged in as</p>
-            <p className="mt-1 text-base font-semibold text-white">{roleLabel}</p>
+            <p className="mt-1 text-base font-semibold text-white">{displayName}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-sky-400/60">{roleLabel}</p>
             <Link
               id="dashboard-logout-link"
               href="/login"
