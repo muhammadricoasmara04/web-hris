@@ -58,7 +58,7 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
       id: "sidebar-link-hr-dashboard",
       label: "HR Dashboard",
       icon: LayoutDashboard,
-      href: "/dashboard/hr",
+      href: "/dashboard/app-hr",
     },
     {
       id: "sidebar-link-hr-to-employee",
@@ -76,7 +76,7 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
       id: "sidebar-link-hr-attendance",
       label: "Kehadiran Tim",
       icon: CalendarClock,
-      href: "/dashboard/hr/attendance",
+      href: "/dashboard/app-hr/data-attendance",
     },
   ],
   employee: [
@@ -205,7 +205,7 @@ export function DashboardSidebar() {
   const userRole: "admin" | "hr" | "employee" = 
     apiRole.includes("admin") ? "admin" : 
     (apiRole.includes("hr") || apiRole.includes("manager") || apiRole.includes("super")) ? "hr" : 
-    (pathname.startsWith("/dashboard/hr") ? "hr" : "employee");
+    (pathname.startsWith("/dashboard/app-hr") ? "hr" : "employee");
 
   const primaryItems = primaryItemsByRole[userRole];
   const roleLabel = userRole === "admin" ? "Administrator" : userRole === "hr" ? "HR" : "Employee";
@@ -243,7 +243,7 @@ export function DashboardSidebar() {
             
             {userRole !== "employee" && (
               <Link
-                href="/dashboard/hr"
+                href="/dashboard/app-hr"
                 onClick={() => setIsOpen(false)}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-400 active:scale-95"
               >

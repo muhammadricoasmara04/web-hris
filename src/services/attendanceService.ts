@@ -19,7 +19,6 @@ export type CheckInResponse = {
   data?: unknown;
 };
 
-
 export type AttendanceHistoryItem = {
   id?: string | number;
   type?: "in" | "out" | string;
@@ -42,6 +41,11 @@ export type AttendanceHistoryResponse = {
   message?: string;
   data?: AttendanceHistoryItem[] | { data?: AttendanceHistoryItem[] };
   [key: string]: unknown;
+};
+
+export type AttendanceRecordsQuery = {
+  period?: "today" | "week" | "month";
+  date?: string;
 };
 
 const asText = (value: unknown): string | undefined => {
@@ -207,7 +211,6 @@ export async function checkOut(payload: CheckOutPayload): Promise<CheckInRespons
   throw latestError instanceof Error ? latestError : new Error("Gagal melakukan clock out.");
 }
 
-
 export async function getTodayAttendanceHistory(): Promise<AttendanceHistoryItem[]> {
   const response = await authFetch(buildApiUrl("/api/attendance/me"), {
     method: "GET",
@@ -221,4 +224,21 @@ export async function getTodayAttendanceHistory(): Promise<AttendanceHistoryItem
   }
 
   return extractHistoryArray(responseData?.data);
+}
+
+export async function getAttendanceRecords(query: AttendanceRecordsQuery = {}): Promise<AttendanceHistoryItem[]> {
+  const params = new URLSearchParams();
+
+  if (query.period) params.set("period", query.period);
+  if (query.date) params.set("date", query.date);
+
+  const endpoint = `/api/attendance${params.toString() ? `?${params.toString()}` : ""}`;
+  const response = await authFetch(buildApiUrl(endpoint), { method: "GET" });
+  const responseData = (await response.json().catch(() => null)) as AttendanceHistoryResponse | null;
+
+  if (!response.ok) {
+    throw new Error(responseData?.message || "Gagal mengambil data absensi karyawan.");
+  }
+
+  return extractHistoryArray(responseData?.data ?? responseData);
 }
