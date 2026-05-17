@@ -1,10 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Search, UsersRound, Building2, UserCheck } from "lucide-react";
+import { Search, UsersRound, Building2, UserCheck, UserPlus } from "lucide-react";
 import { useState, useMemo } from "react";
 import { authFetch } from "@/services/authClient";
 import { buildApiUrl } from "@/api/api";
+import { formatDate } from "@/utils/formatDate";
+import Link from "next/link";
 
 const badgeClass: Record<string, string> = {
   Active: "border-emerald-400/30 bg-emerald-400/15 text-emerald-300",
@@ -53,6 +55,8 @@ export default function HrEmployeeMonitoringPage() {
       dept: item.department || item.employee?.department || item.division || "-",
       role: item.role?.name || item.roleId || "Employee",
       status: item.status ? (item.status.charAt(0).toUpperCase() + item.status.slice(1).toLowerCase()) : "Active",
+      joinDate: item.joinDate || "-",
+      createdAt: item.createdAt || "-",
     }));
   }, [employeeQuery.data, searchQuery]);
 
@@ -62,9 +66,20 @@ export default function HrEmployeeMonitoringPage() {
   return (
     <div className="space-y-6 pb-20 pt-20">
       <header className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">HR Employee Data</p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Data Karyawan</h1>
-        <p className="mt-2 text-sm text-zinc-300">Daftar semua karyawan yang terdaftar di dalam sistem.</p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">HR Employee Data</p>
+            <h1 className="mt-2 text-3xl font-bold text-white">Data Karyawan</h1>
+            <p className="mt-2 text-sm text-zinc-300">Daftar semua karyawan yang terdaftar di dalam sistem.</p>
+          </div>
+          <Link
+            href="/dashboard/app-hr/data-employees/add"
+            className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 transition-colors shadow-lg shadow-sky-500/20"
+          >
+            <UserPlus className="h-4 w-4" />
+            Tambah Karyawan
+          </Link>
+        </div>
         <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
             <UsersRound className="mb-2 h-5 w-5 text-sky-300" />
@@ -118,6 +133,8 @@ export default function HrEmployeeMonitoringPage() {
                   <th className="px-3 py-3 font-semibold">Departemen</th>
                   <th className="px-3 py-3 font-semibold">Role</th>
                   <th className="px-3 py-3 font-semibold">Status</th>
+                  <th className="px-3 py-3 font-semibold">Join Date</th>
+                  <th className="px-3 py-3 font-semibold">Dibuat Pada</th>
                   <th className="px-3 py-3 font-semibold">Aksi</th>
                 </tr>
               </thead>
@@ -134,6 +151,8 @@ export default function HrEmployeeMonitoringPage() {
                         {row.status}
                       </span>
                     </td>
+                    <td className="px-3 py-3 whitespace-nowrap">{row.joinDate !== "-" ? formatDate(row.joinDate) : "-"}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-xs">{row.createdAt !== "-" ? formatDate(row.createdAt, true) : "-"}</td>
                     <td className="px-3 py-3">
                       <button className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors inline-block whitespace-nowrap">
                         Detail
