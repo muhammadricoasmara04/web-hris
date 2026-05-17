@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Activity, CalendarDays, Clock3, Search, UsersRound } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { AttendanceHistoryItem, getAttendanceRecords } from "@/services/attendanceService";
@@ -51,7 +52,7 @@ const normalizeStatus = (value?: string) => {
 };
 
 const getDisplayName = (item: AttendanceHistoryItem) => {
-  const raw = (item.employeeName || item.name || item.fullname || item.fullName || item.userName || item.username) as string | undefined;
+  const raw = ((item as any).employee?.name || item.employeeName || item.name || item.fullname || item.fullName || item.userName || item.username) as string | undefined;
   return raw || "-";
 };
 
@@ -76,13 +77,17 @@ export default function HrAttendanceMonitoringPage() {
     if (!attendanceQuery.data) return [];
 
     return attendanceQuery.data.map((item, index) => ({
-      id: String(item.id ?? `ATT-${index + 1}`),
+      nik: String((item.nik || (item as any).employee?.nik || item.id) ?? `ATT-${index + 1}`),
       name: getDisplayName(item),
       dept: getDepartment(item),
       date: formatDateLabel(getDateField(item)),
       checkIn: formatTime(item.checkInTime || item.time),
       checkOut: formatTime(item.checkOutTime),
       status: normalizeStatus(item.status),
+      lat: item.lat || item.latitude || (item as any).checkInLatitude,
+      lng: item.lng || item.longitude || (item as any).checkInLongitude,
+      outLat: (item as any).checkOutLatitude,
+      outLng: (item as any).checkOutLongitude,
     }));
   }, [attendanceQuery.data]);
 
@@ -151,13 +156,25 @@ export default function HrAttendanceMonitoringPage() {
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-zinc-400">
-                  <th className="px-3 py-3 font-semibold">ID</th><th className="px-3 py-3 font-semibold">Nama</th><th className="px-3 py-3 font-semibold">Departemen</th><th className="px-3 py-3 font-semibold">Tanggal</th><th className="px-3 py-3 font-semibold">Check In</th><th className="px-3 py-3 font-semibold">Check Out</th><th className="px-3 py-3 font-semibold">Status</th>
+                  <th className="px-3 py-3 font-semibold">NIK</th><th className="px-3 py-3 font-semibold">Nama</th><th className="px-3 py-3 font-semibold">Departemen</th><th className="px-3 py-3 font-semibold">Tanggal</th><th className="px-3 py-3 font-semibold">Check In</th><th className="px-3 py-3 font-semibold">Check Out</th><th className="px-3 py-3 font-semibold">Status</th><th className="px-3 py-3 font-semibold">Lokasi</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id} className="border-b border-white/5 text-zinc-200 hover:bg-white/5">
-                    <td className="px-3 py-3 font-mono text-xs text-zinc-400">{row.id}</td><td className="px-3 py-3 font-medium text-white">{row.name}</td><td className="px-3 py-3">{row.dept}</td><td className="px-3 py-3">{row.date}</td><td className="px-3 py-3">{row.checkIn}</td><td className="px-3 py-3">{row.checkOut}</td><td className="px-3 py-3"><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${badgeClass[row.status] || badgeClass.Hadir}`}>{row.status}</span></td>
+                {rows.map((row, index) => (
+                  <tr key={`${row.nik}-${index}`} className="border-b border-white/5 text-zinc-200 hover:bg-white/5">
+                    <td className="px-3 py-3 font-mono text-xs text-zinc-400">{row.nik}</td><td className="px-3 py-3 font-medium text-white">{row.name}</td><td className="px-3 py-3">{row.dept}</td><td className="px-3 py-3">{row.date}</td><td className="px-3 py-3">{row.checkIn}</td><td className="px-3 py-3">{row.checkOut}</td><td className="px-3 py-3"><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${badgeClass[row.status] || badgeClass.Hadir}`}>{row.status}</span></td>
+                    <td className="px-3 py-3">
+                      {row.lat && row.lng ? (
+                        <Link
+                          href={`/dashboard/app-hr/data-attendance/data-mapping?inLat=${row.lat}&inLng=${row.lng}${row.outLat && row.outLng ? `&outLat=${row.outLat}&outLng=${row.outLng}` : ""}&name=${encodeURIComponent(row.name)}`}
+                          className="rounded-lg bg-sky-500/20 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/30 transition-colors inline-block whitespace-nowrap"
+                        >
+                          Lihat Lokasi
+                        </Link>
+                      ) : (
+                        <span className="text-zinc-500 text-xs">-</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
