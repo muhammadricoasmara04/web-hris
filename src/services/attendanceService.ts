@@ -44,8 +44,10 @@ export type AttendanceHistoryResponse = {
 };
 
 export type AttendanceRecordsQuery = {
-  period?: "today" | "week" | "month";
+  period?: "today" | "week" | "month" | "custom";
   date?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 const asText = (value: unknown): string | undefined => {
@@ -229,8 +231,10 @@ export async function getTodayAttendanceHistory(): Promise<AttendanceHistoryItem
 export async function getAttendanceRecords(query: AttendanceRecordsQuery = {}): Promise<AttendanceHistoryItem[]> {
   const params = new URLSearchParams();
 
-  if (query.period) params.set("period", query.period);
+  if (query.period && query.period !== "custom") params.set("period", query.period);
   if (query.date) params.set("date", query.date);
+  if (query.startDate) params.set("startDate", query.startDate);
+  if (query.endDate) params.set("endDate", query.endDate);
 
   const endpoint = `/api/attendance${params.toString() ? `?${params.toString()}` : ""}`;
   const response = await authFetch(buildApiUrl(endpoint), { method: "GET" });

@@ -24,6 +24,7 @@ export default function HrEmployeeMonitoringPage() {
         const response = await authFetch(url);
         if (!response.ok) throw new Error("Gagal mengambil data employee");
         const json = await response.json();
+        console.log("Data Employee API Response:", json); // Debugging API data
         return (json.data || []) as any[];
       } catch (err) {
         console.error(err);
@@ -52,7 +53,7 @@ export default function HrEmployeeMonitoringPage() {
       nik: item.nik || item.employee?.nik || `NIK-${index + 1}`,
       name: item.name || item.employee?.name || item.username || "Karyawan",
       email: item.email || "-",
-      dept: item.department || item.employee?.department || item.division || "-",
+      dept: item.department?.name || (typeof item.department === 'string' ? item.department : null) || "-",
       role: item.role?.name || item.roleId || "Employee",
       status: item.status ? (item.status.charAt(0).toUpperCase() + item.status.slice(1).toLowerCase()) : "Active",
       joinDate: item.joinDate || "-",

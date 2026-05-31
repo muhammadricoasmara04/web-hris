@@ -20,7 +20,7 @@ import { getMe } from "@/services/authService";
 const hrMenus = [
   { label: "Data Absen", icon: CalendarClock, href: "/dashboard/app-hr/data-attendance", color: "bg-emerald-500", shadow: "shadow-emerald-500/20" },
   { label: "Karyawan", icon: Users, href: "/dashboard/app-hr/data-employees", color: "bg-sky-500", shadow: "shadow-sky-500/20" },
-  { label: "Departemen", icon: Building2, href: "/dashboard/app-hr/departments", color: "bg-amber-500", shadow: "shadow-amber-500/20" },
+  { label: "Departemen", icon: Building2, href: "/dashboard/app-hr/data-departements", color: "bg-amber-500", shadow: "shadow-amber-500/20" },
   { label: "Payroll", icon: Wallet, href: "/dashboard/app-hr/payroll", color: "bg-purple-500", shadow: "shadow-purple-500/20" },
   { label: "Laporan", icon: FileText, href: "/dashboard/app-hr/reports", color: "bg-rose-500", shadow: "shadow-rose-500/20" },
   { label: "Lainnya", icon: LayoutGrid, href: "/dashboard/app-hr/more", color: "bg-zinc-600", shadow: "shadow-zinc-600/20" },
