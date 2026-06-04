@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Search, Loader2, Briefcase, Pencil } from "lucide-react";
 import { buildApiUrl } from "@/api/api";
@@ -25,6 +25,9 @@ export default function DataPositionsPage() {
   const [editLevel, setEditLevel] = useState("");
   const [editBaseAllowance, setEditBaseAllowance] = useState("");
   const [editDeptId, setEditDeptId] = useState("");
+
+  const [filterDeptId, setFilterDeptId] = useState("");
+  const [filterLevel, setFilterLevel] = useState("");
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
@@ -219,13 +222,25 @@ export default function DataPositionsPage() {
     });
   };
 
+  const uniqueLevels = useMemo(() => {
+    const levels = positions
+      .map((pos: any) => pos.level)
+      .filter((lvl: any) => !!lvl);
+    return Array.from(new Set(levels)) as string[];
+  }, [positions]);
+
   const filteredData = [...positions]
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-    .filter((pos) => 
-      (pos.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (pos.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (pos.level || "").toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    .filter((pos) => {
+      const matchesSearch = (pos.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pos.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pos.level || "").toLowerCase().includes(searchQuery.toLowerCase());
+        
+      const matchesDept = !filterDeptId || pos.departmentId === filterDeptId;
+      const matchesLevel = !filterLevel || pos.level === filterLevel;
+
+      return matchesSearch && matchesDept && matchesLevel;
+    });
 
   const formatAllowance = (value: number | null | undefined) => {
     if (value === null || value === undefined) return "-";
@@ -264,7 +279,7 @@ export default function DataPositionsPage() {
       </header>
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-        <div className="mb-4 grid gap-3 md:grid-cols-2">
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
           <label className="flex flex-col gap-2 text-sm text-zinc-300">
             Cari Jabatan
             <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
@@ -277,6 +292,38 @@ export default function DataPositionsPage() {
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-zinc-500"
               />
             </div>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm text-zinc-300">
+            Filter Departemen
+            <select
+              value={filterDeptId}
+              onChange={(e) => setFilterDeptId(e.target.value)}
+              className="rounded-xl border border-white/10 bg-[#18181b] px-3 py-2 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]"
+            >
+              <option value="" className="bg-[#18181b] text-white">Semua Departemen</option>
+              {departments.map((dept: any) => (
+                <option key={dept.id} value={dept.id} className="bg-[#18181b] text-white">
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm text-zinc-300">
+            Filter Level
+            <select
+              value={filterLevel}
+              onChange={(e) => setFilterLevel(e.target.value)}
+              className="rounded-xl border border-white/10 bg-[#18181b] px-3 py-2 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]"
+            >
+              <option value="" className="bg-[#18181b] text-white">Semua Level</option>
+              {uniqueLevels.map((lvl) => (
+                <option key={lvl} value={lvl} className="bg-[#18181b] text-white">
+                  {lvl}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
 
@@ -292,6 +339,7 @@ export default function DataPositionsPage() {
               <thead>
                 <tr className="border-b border-white/10 text-zinc-400">
                   <th className="px-3 py-3 font-semibold">Nama Jabatan</th>
+                  <th className="px-3 py-3 font-semibold">Departemen</th>
                   <th className="px-3 py-3 font-semibold">Deskripsi</th>
                   <th className="px-3 py-3 font-semibold">Level</th>
                   <th className="px-3 py-3 font-semibold">Tunjangan Pokok</th>
@@ -304,6 +352,9 @@ export default function DataPositionsPage() {
                 {filteredData.map((pos) => (
                   <tr key={pos.id} className="border-b border-white/5 text-zinc-200 hover:bg-white/5 transition-colors">
                     <td className="px-3 py-3 font-medium text-white">{pos.name}</td>
+                    <td className="px-3 py-3 text-zinc-300">
+                      {pos.department?.name || departments.find((d: any) => d.id === pos.departmentId)?.name || "-"}
+                    </td>
                     <td className="px-3 py-3 text-zinc-400">{pos.description || "-"}</td>
                     <td className="px-3 py-3 font-mono text-xs text-zinc-400">{pos.level || "-"}</td>
                     <td className="px-3 py-3 font-medium text-sky-300">{formatAllowance(pos.baseAllowance)}</td>
