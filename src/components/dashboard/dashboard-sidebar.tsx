@@ -2,7 +2,9 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
+  Building2,
   CalendarClock,
+  Contact,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -61,22 +63,16 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
       href: "/dashboard/app-hr",
     },
     {
-      id: "sidebar-link-hr-to-employee",
-      label: "Akses Absen Karyawan",
-      icon: CalendarClock,
-      href: "/dashboard/employee",
-    },
-    {
-      id: "sidebar-link-hr-employees",
-      label: "Data Karyawan",
-      icon: Users,
-      soon: true,
-    },
-    {
       id: "sidebar-link-hr-attendance",
       label: "Kehadiran Tim",
       icon: CalendarClock,
       href: "/dashboard/app-hr/data-attendance",
+    },
+    {
+      id: "sidebar-link-hr-payroll",
+      label: "Payroll & Gaji",
+      icon: Wallet,
+      soon: true,
     },
   ],
   employee: [
@@ -111,6 +107,31 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
       soon: true,
     },
   ],
+};
+
+const masterItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
+  admin: [],
+  hr: [
+    {
+      id: "sidebar-link-hr-employees",
+      label: "Data Karyawan",
+      icon: Users,
+      href: "/dashboard/app-hr/data-employees",
+    },
+    {
+      id: "sidebar-link-hr-departments",
+      label: "Departemen",
+      icon: Building2,
+      href: "/dashboard/app-hr/data-departements",
+    },
+    {
+      id: "sidebar-link-hr-positions",
+      label: "Jabatan",
+      icon: Contact,
+      href: "/dashboard/app-hr/data-position",
+    },
+  ],
+  employee: [],
 };
 
 const systemItems: SidebarItem[] = [
@@ -176,7 +197,21 @@ function SidebarMenuItem({
   );
 }
 
-export function DashboardSidebar() {
+function checkIsActive(itemHref: string | undefined, currentPathname: string): boolean {
+  if (!itemHref) return false;
+  // Exact match for dashboard homes/roots
+  const exactMatchRoutes = [
+    "/dashboard/app-hr",
+    "/dashboard/admin",
+    "/dashboard/employee"
+  ];
+  if (exactMatchRoutes.includes(itemHref)) {
+    return currentPathname === itemHref;
+  }
+  return currentPathname === itemHref || currentPathname.startsWith(`${itemHref}/`);
+}
+
+export function DashboardSidebar({ onStartTransition }: { onStartTransition?: () => void }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -189,11 +224,11 @@ export function DashboardSidebar() {
   // Extract display name
   const rawUser = (userData?.data || userData?.user || userData) as any;
   const displayName = rawUser?.fullname || rawUser?.name || rawUser?.fullName || rawUser?.username || "User";
-  
+
   // Extract role from API, handle both string and object formats
   let apiRole = "";
   const roleData = rawUser?.role;
-  
+
   if (typeof roleData === "string") {
     apiRole = roleData.toLowerCase();
   } else if (roleData && typeof roleData === "object") {
@@ -202,13 +237,18 @@ export function DashboardSidebar() {
     apiRole = String(rawUser.roleName).toLowerCase();
   }
 
-  const userRole: "admin" | "hr" | "employee" = 
-    apiRole.includes("admin") ? "admin" : 
-    (apiRole.includes("hr") || apiRole.includes("manager") || apiRole.includes("super")) ? "hr" : 
-    (pathname.startsWith("/dashboard/app-hr") ? "hr" : "employee");
+  const isUserHrOrAdmin = apiRole.includes("admin") || apiRole.includes("hr") || apiRole.includes("manager") || apiRole.includes("super");
+  const isHrisMode = isUserHrOrAdmin && (pathname.startsWith("/dashboard/app-hr") || pathname.startsWith("/dashboard/admin"));
 
-  const primaryItems = primaryItemsByRole[userRole];
-  const roleLabel = userRole === "admin" ? "Administrator" : userRole === "hr" ? "HR" : "Employee";
+  const activeMenuRole: "admin" | "hr" | "employee" = isHrisMode
+    ? (apiRole.includes("admin") ? "admin" : "hr")
+    : "employee";
+
+  const primaryItems = primaryItemsByRole[activeMenuRole];
+  const masterItems = masterItemsByRole[activeMenuRole];
+  const roleLabel = isHrisMode
+    ? (apiRole.includes("admin") ? "Administrator" : "HR Manager")
+    : "Karyawan";
 
   return (
     <>
@@ -238,17 +278,27 @@ export function DashboardSidebar() {
         <div className="flex h-full flex-col gap-6">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Web HRIS</p>
-            <h2 className="mt-2 text-xl font-semibold text-white">HR & Admin Panel</h2>
-            <p className="mt-1 text-xs text-zinc-400">Manage your workforce & system.</p>
-            
-            {userRole !== "employee" && (
+            <h2 className="mt-2 text-xl font-semibold text-white">
+              {isHrisMode ? "HR & Admin Panel" : "Portal Karyawan"}
+            </h2>
+            <p className="mt-1 text-xs text-zinc-400">
+              {isHrisMode ? "Kelola data & operasional tim." : "Akses absensi mandiri staf."}
+            </p>
+
+            {isUserHrOrAdmin && (
               <Link
-                href="/dashboard/app-hr"
-                onClick={() => setIsOpen(false)}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-400 active:scale-95"
+                href={isHrisMode ? "/dashboard/employee" : "/dashboard/app-hr"}
+                onClick={() => {
+                  setIsOpen(false);
+                  if (onStartTransition) onStartTransition();
+                }}
+                className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold shadow-lg transition active:scale-95 ${isHrisMode
+                    ? "border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
+                    : "bg-sky-500 text-white hover:bg-sky-400 shadow-sky-500/20"
+                  }`}
               >
                 <LayoutDashboard className="h-4 w-4" />
-                Akses HRIS
+                {isHrisMode ? "Mode Absensi" : "Mode HRIS"}
               </Link>
             )}
           </div>
@@ -261,11 +311,27 @@ export function DashboardSidebar() {
               <SidebarMenuItem
                 key={item.id}
                 item={item}
-                active={Boolean(item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`)))}
+                active={checkIsActive(item.href, pathname)}
                 onNavigate={() => setIsOpen(false)}
               />
             ))}
           </nav>
+
+          {masterItems.length > 0 && (
+            <nav className="space-y-2" aria-label="Master data menu">
+              <p className="px-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                Master Data
+              </p>
+              {masterItems.map((item) => (
+                <SidebarMenuItem
+                  key={item.id}
+                  item={item}
+                  active={checkIsActive(item.href, pathname)}
+                  onNavigate={() => setIsOpen(false)}
+                />
+              ))}
+            </nav>
+          )}
 
           <nav className="space-y-2" aria-label="System configuration menu">
             <p className="px-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
@@ -275,7 +341,7 @@ export function DashboardSidebar() {
               <SidebarMenuItem
                 key={item.id}
                 item={item}
-                active={Boolean(item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`)))}
+                active={checkIsActive(item.href, pathname)}
                 onNavigate={() => setIsOpen(false)}
               />
             ))}

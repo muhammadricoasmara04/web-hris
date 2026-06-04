@@ -13,6 +13,73 @@ const badgeClass: Record<string, string> = {
   Inactive: "border-rose-400/30 bg-rose-400/15 text-rose-300",
 };
 
+const MONTH_MAP: Record<string, number> = {
+  januari: 0, jan: 0,
+  februari: 1, feb: 1,
+  maret: 2, mar: 2,
+  april: 3, apr: 3,
+  mei: 4,
+  juni: 5, jun: 5,
+  juli: 6, jul: 6,
+  agustus: 7, agu: 7,
+  september: 8, sep: 8,
+  oktober: 9, okt: 9,
+  november: 10, nov: 10,
+  desember: 11, des: 11,
+};
+
+function parseIndonesianOrIsoDate(dateStr: string | number | Date | null | undefined): number {
+  if (!dateStr) return 0;
+  if (dateStr instanceof Date) return dateStr.getTime();
+  if (typeof dateStr === "number") return dateStr;
+
+  const cleanStr = String(dateStr).toLowerCase().replace(/\s+/g, " ");
+
+  // Check if it's an Indonesian date string (contains month names or "pukul")
+  const isIndo = cleanStr.includes("pukul") || 
+                 Object.keys(MONTH_MAP).some(month => cleanStr.includes(month));
+
+  if (isIndo) {
+    try {
+      const parts = cleanStr.split(" ");
+      if (parts.length >= 3) {
+        const day = parseInt(parts[0], 10);
+        const monthName = parts[1];
+        const year = parseInt(parts[2], 10);
+        const month = MONTH_MAP[monthName] ?? 0;
+        
+        let hour = 0;
+        let minute = 0;
+        
+        const pukulIndex = parts.indexOf("pukul");
+        if (pukulIndex !== -1 && parts[pukulIndex + 1]) {
+          const timeStr = parts[pukulIndex + 1];
+          const timeParts = timeStr.split(".");
+          if (timeParts.length >= 2) {
+            hour = parseInt(timeParts[0], 10);
+            minute = parseInt(timeParts[1], 10);
+          }
+        }
+        
+        const parsedDate = new Date(year, month, day, hour, minute);
+        if (!Number.isNaN(parsedDate.getTime())) {
+          return parsedDate.getTime();
+        }
+      }
+    } catch (err) {
+      console.error("Error parsing Indonesian date:", dateStr, err);
+    }
+  }
+
+  // Fallback to standard JS Date parser for ISO / English dates
+  const standardDate = new Date(dateStr);
+  if (!Number.isNaN(standardDate.getTime())) {
+    return standardDate.getTime();
+  }
+
+  return 0;
+}
+
 export default function HrEmployeeMonitoringPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -37,7 +104,7 @@ export default function HrEmployeeMonitoringPage() {
   const rows = useMemo(() => {
     if (!employeeQuery.data) return [];
 
-    let filtered = employeeQuery.data;
+    let filtered = [...employeeQuery.data];
     if (searchQuery) {
       const lower = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -47,6 +114,18 @@ export default function HrEmployeeMonitoringPage() {
           (item.email || "").toLowerCase().includes(lower)
       );
     }
+
+    // Sort by createdAt descending (newest first)
+    filtered.sort((a, b) => {
+      const timeA = parseIndonesianOrIsoDate(a.createdAt || a.joinDate);
+      const timeB = parseIndonesianOrIsoDate(b.createdAt || b.joinDate);
+      return timeB - timeA;
+    });
+
+    console.log("=== SORTED EMPLOYEES (Newest First) ===");
+    filtered.forEach((u, i) => {
+      console.log(`[${i + 1}] Name: "${u.name}", createdAt: "${u.createdAt}", joinDate: "${u.joinDate}", parsedTS: ${parseIndonesianOrIsoDate(u.createdAt || u.joinDate)}`);
+    });
 
     return filtered.map((item, index) => ({
       id: item.id || `EMP-${index}`,
@@ -155,9 +234,12 @@ export default function HrEmployeeMonitoringPage() {
                     <td className="px-3 py-3 whitespace-nowrap">{row.joinDate !== "-" ? formatDate(row.joinDate) : "-"}</td>
                     <td className="px-3 py-3 whitespace-nowrap text-xs">{row.createdAt !== "-" ? formatDate(row.createdAt, true) : "-"}</td>
                     <td className="px-3 py-3">
-                      <button className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors inline-block whitespace-nowrap">
+                      <Link
+                        href={`/dashboard/app-hr/data-employees/detail?id=${row.id}`}
+                        className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors inline-block whitespace-nowrap"
+                      >
                         Detail
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}

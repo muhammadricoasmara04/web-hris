@@ -41,7 +41,9 @@ const formatTime = (value?: string) => {
   return parsed.toLocaleTimeString("id-ID", {
     hour: "2-digit",
     minute: "2-digit",
-  });
+    second: "2-digit",
+    hour12: false,
+  }).replace(/\./g, ":");
 };
 
 const normalizeStatus = (value?: string, hasCheckIn?: boolean, hasCheckOut?: boolean) => {
@@ -136,7 +138,14 @@ export default function HrAttendanceMonitoringPage() {
       });
     }
 
-    return filteredData.map((item, index) => {
+    // Sort by date descending (newest first)
+    const sortedData = [...filteredData].sort((a, b) => {
+      const dateA = new Date(getDateField(a) || 0).getTime();
+      const dateB = new Date(getDateField(b) || 0).getTime();
+      return dateB - dateA;
+    });
+
+    return sortedData.map((item, index) => {
       const hasCheckIn = !!(item.checkInTime || item.time);
       const hasCheckOut = !!item.checkOutTime;
 

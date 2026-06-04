@@ -37,25 +37,6 @@ export function MobileNav() {
           const Icon = item.icon;
           const isActive = pathname === item.href;
 
-          if (item.soon) {
-            return (
-              <button
-                key={item.label}
-                type="button"
-                disabled
-                className="flex flex-col items-center gap-1 opacity-40 transition"
-              >
-                <div className="relative">
-                  <Icon className="h-5 w-5" />
-                  <span className="absolute -right-1 -top-1 block h-1.5 w-1.5 rounded-full bg-fuchsia-400" />
-                </div>
-                <span className="text-[10px] font-medium tracking-wide">
-                  {item.label}
-                </span>
-              </button>
-            );
-          }
-
           return (
             <Link
               key={item.label}

@@ -4,6 +4,7 @@ export function formatDate(value: string | number | Date, includeTime: boolean =
   const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
+    if (typeof value === "string") return value;
     return "Invalid Date";
   }
 
