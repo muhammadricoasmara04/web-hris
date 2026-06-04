@@ -64,7 +64,7 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
     },
     {
       id: "sidebar-link-hr-attendance",
-      label: "Kehadiran Tim",
+      label: "Absensi Karyawan",
       icon: CalendarClock,
       href: "/dashboard/app-hr/data-attendance",
     },
@@ -293,8 +293,8 @@ export function DashboardSidebar({ onStartTransition }: { onStartTransition?: ()
                   if (onStartTransition) onStartTransition();
                 }}
                 className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold shadow-lg transition active:scale-95 ${isHrisMode
-                    ? "border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-                    : "bg-sky-500 text-white hover:bg-sky-400 shadow-sky-500/20"
+                  ? "border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
+                  : "bg-sky-500 text-white hover:bg-sky-400 shadow-sky-500/20"
                   }`}
               >
                 <LayoutDashboard className="h-4 w-4" />

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import Providers from "./providers";
+import GlobalRouteLoader from "@/utils/global-loader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <Providers>
+          <GlobalRouteLoader />
+          {children}
+        </Providers>
       </body>
     </html>
   );
