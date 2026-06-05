@@ -51,7 +51,7 @@ export default function DataPositionsPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string; level?: string | null; baseAllowance?: number | null }) => {
+    mutationFn: async (data: { name: string; description?: string; level?: string | null; baseAllowance?: number | null; departmentId?: string | null }) => {
       const res = await authFetch(buildApiUrl("/api/positions"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,7 +93,7 @@ export default function DataPositionsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string; name: string; description?: string; level?: string | null; baseAllowance?: number | null }) => {
+    mutationFn: async (data: { id: string; name: string; description?: string; level?: string | null; baseAllowance?: number | null; departmentId?: string | null }) => {
       const { id, ...payload } = data;
       const res = await authFetch(buildApiUrl(`/api/positions/${id}`), {
         method: "PUT",
@@ -172,12 +172,22 @@ export default function DataPositionsPage() {
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
+    if (!newName.trim() || !newDeptId || !newLevel.trim()) {
+      Swal.fire({
+        title: "Peringatan",
+        text: "Nama Jabatan, Departemen, dan Level wajib diisi",
+        icon: "warning",
+        background: "#18181b",
+        color: "#fff",
+      });
+      return;
+    }
     createMutation.mutate({
       name: newName,
       description: newDesc || undefined,
-      level: newLevel || null,
+      level: newLevel,
       baseAllowance: newBaseAllowance ? parseFloat(newBaseAllowance) : null,
+      departmentId: newDeptId,
     });
   };
 
@@ -193,13 +203,23 @@ export default function DataPositionsPage() {
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editName.trim()) return;
+    if (!editName.trim() || !editDeptId || !editLevel.trim()) {
+      Swal.fire({
+        title: "Peringatan",
+        text: "Nama Jabatan, Departemen, dan Level wajib diisi",
+        icon: "warning",
+        background: "#18181b",
+        color: "#fff",
+      });
+      return;
+    }
     updateMutation.mutate({
       id: editId,
       name: editName,
       description: editDesc || undefined,
-      level: editLevel || null,
+      level: editLevel,
       baseAllowance: editBaseAllowance ? parseFloat(editBaseAllowance) : null,
+      departmentId: editDeptId,
     });
   };
 
@@ -417,13 +437,14 @@ export default function DataPositionsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-300">Departemen (Belum Hubung DB)</label>
+                <label className="block text-sm font-medium text-zinc-300">Departemen</label>
                 <select
+                  required
                   value={editDeptId}
                   onChange={(e) => setEditDeptId(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-[#18181b] p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]"
                 >
-                  <option value="" className="bg-[#18181b] text-white">Pilih Departemen (Opsional)</option>
+                  <option value="" disabled className="bg-[#18181b] text-white">Pilih Departemen</option>
                   {departments.map((dept: any) => (
                     <option key={dept.id} value={dept.id} className="bg-[#18181b] text-white">
                       {dept.name}
@@ -432,9 +453,10 @@ export default function DataPositionsPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-300">Level (Opsional)</label>
+                <label className="block text-sm font-medium text-zinc-300">Level</label>
                 <input
                   type="text"
+                  required
                   value={editLevel}
                   onChange={(e) => setEditLevel(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50"
@@ -504,13 +526,14 @@ export default function DataPositionsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-300">Departemen (Belum Hubung DB)</label>
+                <label className="block text-sm font-medium text-zinc-300">Departemen</label>
                 <select
+                  required
                   value={newDeptId}
                   onChange={(e) => setNewDeptId(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-[#18181b] p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]"
                 >
-                  <option value="" className="bg-[#18181b] text-white">Pilih Departemen (Opsional)</option>
+                  <option value="" disabled className="bg-[#18181b] text-white">Pilih Departemen</option>
                   {departments.map((dept: any) => (
                     <option key={dept.id} value={dept.id} className="bg-[#18181b] text-white">
                       {dept.name}
@@ -519,9 +542,10 @@ export default function DataPositionsPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-300">Level (Opsional)</label>
+                <label className="block text-sm font-medium text-zinc-300">Level</label>
                 <input
                   type="text"
+                  required
                   value={newLevel}
                   onChange={(e) => setNewLevel(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50"

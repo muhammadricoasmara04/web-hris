@@ -32,6 +32,16 @@ export default function AddEmployeePage() {
       return (Array.isArray(json) ? json : json.data || []) as any[];
     }
   });
+
+  const { data: positions = [] } = useQuery({
+    queryKey: ["positions"],
+    queryFn: async () => {
+      const res = await authFetch(buildApiUrl("/api/positions"));
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (Array.isArray(json) ? json : json.data || []) as any[];
+    }
+  });
   
   const [isNikEditable, setIsNikEditable] = useState(false);
   
@@ -75,7 +85,8 @@ export default function AddEmployeePage() {
         const url = buildApiUrl("/api/auth/register");
         const payload = {
           ...data,
-          departmentId: data.department || undefined
+          departmentId: data.department || undefined,
+          positionId: data.position || undefined
         };
         const response = await authFetch(url, {
           method: "POST",
@@ -141,6 +152,7 @@ export default function AddEmployeePage() {
       const newData = { ...prev, [name]: value };
       
       if (name === "department") {
+        newData.position = "";
         const selectedDept = departments.find((d: any) => d.name === value || d.id === value);
         if (selectedDept && selectedDept.code) {
           const deptCode = selectedDept.code;
@@ -162,6 +174,8 @@ export default function AddEmployeePage() {
       return newData;
     });
   };
+
+  const filteredPositions = positions.filter((pos: any) => pos.departmentId === formData.department);
 
   return (
     <div className="space-y-6 pb-20 pt-20 max-w-4xl mx-auto">
@@ -263,7 +277,23 @@ export default function AddEmployeePage() {
                   ))}
                 </select>
               </div>
-              <div className="space-y-2"><label className="block text-sm font-medium text-zinc-300">Posisi (Jabatan)</label><input type="text" name="position" value={formData.position} onChange={handleChange} className="w-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]" placeholder="Kosongkan (Belum terhubung API Posisi)" /></div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-zinc-300">Posisi (Jabatan)</label>
+                <select 
+                  name="position" 
+                  value={formData.position} 
+                  onChange={handleChange} 
+                  className="w-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]"
+                  disabled={!formData.department}
+                >
+                  <option value="">{formData.department ? "-- Pilih Posisi --" : "Pilih departemen dahulu"}</option>
+                  {filteredPositions.map((pos: any) => (
+                    <option key={pos.id} value={pos.id}>
+                      {pos.name} {pos.level ? `(${pos.level})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="space-y-2"><label className="block text-sm font-medium text-zinc-300">Status Karyawan</label><select name="employmentStatus" value={formData.employmentStatus} onChange={handleChange} className="w-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]"><option value="">-- Pilih Status --</option><option value="PERMANENT">Tetap</option><option value="CONTRACT">Kontrak</option><option value="INTERNSHIP">Probation/Internship</option><option value="FREELANCE">Freelance</option></select></div>
               <div className="space-y-2"><label className="block text-sm font-medium text-zinc-300">Tanggal Bergabung</label><input type="date" name="joinDate" value={formData.joinDate} onChange={handleChange} className="w-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]" /></div>
               <div className="space-y-2"><label className="block text-sm font-medium text-zinc-300">Akhir Kontrak (Opsional)</label><input type="date" name="contractEndDate" value={formData.contractEndDate} onChange={handleChange} className="w-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 [color-scheme:dark]" /></div>
