@@ -1,8 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Search, UsersRound, Building2, UserCheck, UserPlus } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Search, UsersRound, Building2, UserCheck, UserPlus, Trash2, Loader2, Eye } from "lucide-react";
 import { useState, useMemo } from "react";
+import Swal from "sweetalert2";
 import { authFetch } from "@/services/authClient";
 import { buildApiUrl } from "@/api/api";
 import { formatDate } from "@/utils/formatDate";
@@ -81,7 +82,72 @@ function parseIndonesianOrIsoDate(dateStr: string | number | Date | null | undef
 }
 
 export default function HrEmployeeMonitoringPage() {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await authFetch(buildApiUrl(`/api/auth/users/${id}`), {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Gagal menghapus karyawan");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees", "all"] });
+      Swal.fire({
+        title: "Berhasil!",
+        text: "Karyawan telah berhasil dihapus.",
+        icon: "success",
+        background: '#18181b',
+        color: '#fff',
+        confirmButtonColor: '#0ea5e9',
+      });
+    },
+    onError: (err: any) => {
+      Swal.fire({
+        title: "Gagal!",
+        text: err.message || "Gagal menghapus karyawan.",
+        icon: "error",
+        background: '#18181b',
+        color: '#fff',
+        confirmButtonColor: '#0ea5e9',
+      });
+    }
+  });
+
+  const handleDelete = (id: string, name: string, nik: string) => {
+    Swal.fire({
+      title: 'Hapus Karyawan?',
+      html: `Apakah Anda yakin ingin menghapus karyawan <strong>${name}</strong>?<br/><br/><p class="text-sm text-zinc-400">Silakan ketik NIK Karyawan berikut untuk konfirmasi:<br/><strong class="text-sky-400 select-none">${nik}</strong></p>`,
+      icon: 'warning',
+      input: 'text',
+      inputPlaceholder: 'Masukkan NIK',
+      showCancelButton: true,
+      background: '#18181b',
+      color: '#fff',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#3f3f46',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'NIK harus diisi!';
+        }
+        if (value.trim() !== nik) {
+          return 'NIK yang dimasukkan tidak sesuai!';
+        }
+        return null;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteMutation.mutate(id);
+      }
+    });
+  };
 
   const employeeQuery = useQuery({
     queryKey: ["employees", "all"],
@@ -234,12 +300,27 @@ export default function HrEmployeeMonitoringPage() {
                     <td className="px-3 py-3 whitespace-nowrap">{row.joinDate !== "-" ? formatDate(row.joinDate) : "-"}</td>
                     <td className="px-3 py-3 whitespace-nowrap text-xs">{row.createdAt !== "-" ? formatDate(row.createdAt, true) : "-"}</td>
                     <td className="px-3 py-3">
-                      <Link
-                        href={`/dashboard/app-hr/data-employees/detail?id=${row.id}`}
-                        className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors inline-block whitespace-nowrap"
-                      >
-                        Detail
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/dashboard/app-hr/data-employees/detail?id=${row.id}`}
+                          className="inline-flex items-center justify-center rounded-lg bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+                          title="Detail Karyawan"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(row.id, row.name, row.nik)}
+                          disabled={deleteMutation.isPending}
+                          className="inline-flex items-center justify-center rounded-lg bg-rose-500/10 p-2 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors disabled:opacity-50"
+                          title="Hapus Karyawan"
+                        >
+                          {deleteMutation.isPending && deleteMutation.variables === row.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
