@@ -281,7 +281,7 @@ export default function HrAttendanceMonitoringPage() {
                     <td className="px-3 py-3">
                       {row.lat && row.lng ? (
                         <Link
-                          href={`/dashboard/app-hr/data-attendance/data-mapping?inLat=${row.lat}&inLng=${row.lng}${row.outLat && row.outLng ? `&outLat=${row.outLat}&outLng=${row.outLng}` : ""}&name=${encodeURIComponent(row.name)}`}
+                          href={`/dashboard/app-hr/data-attendance/data-mapping?inLat=${row.lat}&inLng=${row.lng}${row.outLat && row.outLng ? `&outLat=${row.outLat}&outLng=${row.outLng}` : ""}&name=${encodeURIComponent(row.name)}&nik=${encodeURIComponent(row.nik)}&dept=${encodeURIComponent(row.dept)}&date=${encodeURIComponent(row.date)}&checkIn=${encodeURIComponent(row.checkIn)}&checkOut=${encodeURIComponent(row.checkOut)}&status=${encodeURIComponent(row.status)}`}
                           className="rounded-lg bg-sky-500/20 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/30 transition-colors inline-block whitespace-nowrap"
                         >
                           Lihat Lokasi
