@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Search, Loader2, Briefcase, Pencil } from "lucide-react";
+import { Plus, Trash2, Search, Loader2, Briefcase, Pencil, Building } from "lucide-react";
 import { buildApiUrl } from "@/api/api";
 import { authFetch } from "@/services/authClient";
 import { formatDate } from "@/utils/formatDate";
@@ -289,11 +289,16 @@ export default function DataPositionsPage() {
           </button>
         </div>
         
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
             <Briefcase className="mb-2 h-5 w-5 text-sky-300" />
             <p className="text-xs text-zinc-400">Total Jabatan</p>
             <p className="text-2xl font-bold text-white">{positions.length}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <Building className="mb-2 h-5 w-5 text-amber-300" />
+            <p className="text-xs text-zinc-400">Total Departemen</p>
+            <p className="text-2xl font-bold text-white">{departments.length}</p>
           </div>
         </div>
       </header>

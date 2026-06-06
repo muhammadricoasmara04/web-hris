@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Activity, CalendarDays, Clock3, Search, UsersRound } from "lucide-react";
+import { Activity, CalendarDays, Clock3, Search, UsersRound, UserCheck, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -176,6 +176,8 @@ export default function HrAttendanceMonitoringPage() {
   const totalEmployees = rows.length;
   const hadirCount = rows.filter((row) => row.status === "Hadir").length;
   const terlambatCount = rows.filter((row) => row.status === "Terlambat").length;
+  const izinCount = rows.filter((row) => row.status === "Izin").length;
+  const belumCheckoutCount = rows.filter((row) => row.status === "Belum Checkout").length;
 
   return (
     <div className="space-y-6 pb-20 pt-20">
@@ -183,10 +185,27 @@ export default function HrAttendanceMonitoringPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">HR Attendance Monitoring</p>
         <h1 className="mt-2 text-3xl font-bold text-white">Data Attendance Karyawan</h1>
         <p className="mt-2 text-sm text-zinc-300">Data diambil dari endpoint /api/attendance dengan filter periode dan tanggal.</p>
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4"><UsersRound className="mb-2 h-5 w-5 text-sky-300" /><p className="text-xs text-zinc-400">Total Data</p><p className="text-2xl font-bold text-white">{totalEmployees}</p></div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4"><Activity className="mb-2 h-5 w-5 text-emerald-300" /><p className="text-xs text-zinc-400">Hadir</p><p className="text-2xl font-bold text-white">{hadirCount}</p></div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4"><Clock3 className="mb-2 h-5 w-5 text-amber-300" /><p className="text-xs text-zinc-400">Terlambat</p><p className="text-2xl font-bold text-white">{terlambatCount}</p></div>
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <UsersRound className="mb-2 h-5 w-5 text-sky-300" />
+            <p className="text-xs text-zinc-400">Total Absensi</p>
+            <p className="text-2xl font-bold text-white">{totalEmployees}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <UserCheck className="mb-2 h-5 w-5 text-emerald-300" />
+            <p className="text-xs text-zinc-400">Hadir</p>
+            <p className="text-2xl font-bold text-white">{hadirCount}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <Clock3 className="mb-2 h-5 w-5 text-amber-300" />
+            <p className="text-xs text-zinc-400">Terlambat</p>
+            <p className="text-2xl font-bold text-white">{terlambatCount}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <AlertCircle className="mb-2 h-5 w-5 text-rose-300" />
+            <p className="text-xs text-zinc-400">Izin / Belum Checkout</p>
+            <p className="text-2xl font-bold text-white">{izinCount + belumCheckoutCount}</p>
+          </div>
         </div>
       </header>
 

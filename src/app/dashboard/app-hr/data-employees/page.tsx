@@ -149,6 +149,16 @@ export default function HrEmployeeMonitoringPage() {
     });
   };
 
+  const departmentsQuery = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const res = await authFetch(buildApiUrl("/api/departments"));
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (Array.isArray(json) ? json : json.data || []) as any[];
+    }
+  });
+
   const employeeQuery = useQuery({
     queryKey: ["employees", "all"],
     queryFn: async () => {
@@ -240,7 +250,7 @@ export default function HrEmployeeMonitoringPage() {
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
             <Building2 className="mb-2 h-5 w-5 text-amber-300" />
             <p className="text-xs text-zinc-400">Departemen</p>
-            <p className="text-2xl font-bold text-white">-</p>
+            <p className="text-2xl font-bold text-white">{departmentsQuery.data?.length || 0}</p>
           </div>
         </div>
       </header>

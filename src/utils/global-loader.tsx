@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import Loader from "@/components/ui/loader-15";
 
 function LoaderContent() {
   const pathname = usePathname();
@@ -63,9 +63,8 @@ function LoaderContent() {
         {/* Glow effect */}
         <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-sky-500/20 to-indigo-500/20 blur-xl pointer-events-none" />
         
-        <div className="relative">
-          <Loader2 className="h-12 w-12 animate-spin text-sky-500" />
-          <div className="absolute inset-0 h-12 w-12 rounded-full border-2 border-white/5 animate-pulse" />
+        <div className="relative scale-[0.4] -my-14 flex items-center justify-center">
+          <Loader />
         </div>
         
         <div className="text-center">

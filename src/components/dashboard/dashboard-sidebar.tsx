@@ -15,10 +15,11 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getMe } from "@/services/authService";
+import { Button } from "@/components/ui/neon-button";
 
 type SidebarItem = {
   id: string;
@@ -213,6 +214,7 @@ function checkIsActive(itemHref: string | undefined, currentPathname: string): b
 
 export function DashboardSidebar({ onStartTransition }: { onStartTransition?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: userData } = useQuery({
@@ -286,20 +288,19 @@ export function DashboardSidebar({ onStartTransition }: { onStartTransition?: ()
             </p>
 
             {isUserHrOrAdmin && (
-              <Link
-                href={isHrisMode ? "/dashboard/employee" : "/dashboard/app-hr"}
+              <Button
+                variant={isHrisMode ? "default" : "solid"}
+                neon={true}
                 onClick={() => {
                   setIsOpen(false);
                   if (onStartTransition) onStartTransition();
+                  router.push(isHrisMode ? "/dashboard/employee" : "/dashboard/app-hr");
                 }}
-                className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold shadow-lg transition active:scale-95 ${isHrisMode
-                  ? "border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-                  : "bg-sky-500 text-white hover:bg-sky-400 shadow-sky-500/20"
-                  }`}
+                className="mt-4 w-full flex items-center justify-center gap-2 py-2 text-sm font-bold transition active:scale-95 cursor-pointer"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 {isHrisMode ? "Mode Absensi" : "Mode HRIS"}
-              </Link>
+              </Button>
             )}
           </div>
 
