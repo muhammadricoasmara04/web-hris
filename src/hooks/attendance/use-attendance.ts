@@ -44,30 +44,47 @@ export function useAttendance({ coordinates, locationLoading }: UseAttendancePro
     }
 
     try {
-      // Validasi sesi terlebih dahulu
+      // Validasi sesi terlebih dahulu dan ambil semua office
       const meData = await getMe();
-      const office = (meData?.data as any)?.radiusOffice;
+      const allOffices = (meData?.data as any)?.allOffices || [];
 
-      if (office && typeof office.latitude === 'number' && typeof office.longitude === 'number' && typeof office.radius === 'number') {
+      if (allOffices && allOffices.length > 0) {
         const R = 6371e3; // metres
         const lat1 = coordinates.lat;
         const lon1 = coordinates.lng;
-        const lat2 = office.latitude;
-        const lon2 = office.longitude;
         
-        const phi1 = lat1 * Math.PI/180;
-        const phi2 = lat2 * Math.PI/180;
-        const deltaPhi = (lat2-lat1) * Math.PI/180;
-        const deltaLambda = (lon2-lon1) * Math.PI/180;
+        // Cek jarak ke semua kantor
+        const officeDistances = allOffices.map((office: any) => {
+          const lat2 = office.latitude;
+          const lon2 = office.longitude;
+          
+          const phi1 = lat1 * Math.PI/180;
+          const phi2 = lat2 * Math.PI/180;
+          const deltaPhi = (lat2-lat1) * Math.PI/180;
+          const deltaLambda = (lon2-lon1) * Math.PI/180;
 
-        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-                  Math.cos(phi1) * Math.cos(phi2) *
-                  Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const distance = Math.round(R * c); // in metres
+          const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+                    Math.cos(phi1) * Math.cos(phi2) *
+                    Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = Math.round(R * c); // in metres
 
-        if (distance > office.radius) {
-          throw new Error(`Anda berada di luar radius kantor ${office.name || ''}. Jarak Anda ${distance}m dari pusat kantor (Maksimal ${office.radius}m). Silakan mendekat ke lokasi absen.`);
+          return {
+            name: office.name,
+            radius: office.radius,
+            distance,
+            isWithinRadius: distance <= office.radius
+          };
+        });
+
+        // Cek apakah dalam salah satu radius
+        const isWithinAnyRadius = officeDistances.some((o: any) => o.isWithinRadius);
+
+        if (!isWithinAnyRadius) {
+          const nearest = officeDistances.reduce((prev: any, current: any) => 
+            prev.distance < current.distance ? prev : current
+          );
+          throw new Error(`Anda berada di luar area absensi. Lokasi terdekat: ${nearest.name} (${nearest.distance}m, maksimal ${nearest.radius}m). Silakan mendekat ke area absensi.`);
         }
       }
 

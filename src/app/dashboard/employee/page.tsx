@@ -175,13 +175,20 @@ export default function EmployeeAttendancePage() {
   }, [historyQuery.data]);
 
 
-  const { data: userProfile } = useQuery({
+  const { data: userProfile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["auth-me"],
     queryFn: getMe,
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
-  const radiusOffice = (userProfile?.data as any)?.radiusOffice;
+  const allOffices = (userProfile?.data as any)?.allOffices || [];
+
+  useEffect(() => {
+    if (allOffices && allOffices.length > 0) {
+      console.log("[EmployeeAttendancePage] allOffices loaded:", allOffices);
+    }
+  }, [allOffices]);
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: colors.screen.base }}>
@@ -193,7 +200,7 @@ export default function EmployeeAttendancePage() {
           mapTitle="" // Title is empty as per screenshot design
           focusOffset="up"
           zoomControlPlacement="underNotification"
-          office={radiusOffice}
+          offices={allOffices}
         />
         {/* Overlay for better readability at bottom */}
         <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{ background: colors.screen.mapOverlay }} />

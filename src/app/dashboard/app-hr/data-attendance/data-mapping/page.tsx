@@ -40,6 +40,23 @@ export default function AttendanceDataMappingPage() {
   const checkInTime = searchParams.get("checkIn") || "-";
   const checkOutTime = searchParams.get("checkOut") || "-";
   const status = searchParams.get("status") || "Hadir";
+  const checkInLocation = searchParams.get("checkInLocation") || null;
+  const checkOutLocation = searchParams.get("checkOutLocation") || null;
+
+  // Debug logging
+  useEffect(() => {
+    console.log("[AttendanceDataMappingPage] All search params:", {
+      name,
+      nik,
+      dept,
+      date,
+      checkInTime,
+      checkOutTime,
+      status,
+      checkInLocation,
+      checkOutLocation,
+    });
+  }, [name, nik, dept, date, checkInTime, checkOutTime, status, checkInLocation, checkOutLocation]);
 
   const checkIn: Point | null = useMemo(() => {
     const lat = parseNumber(searchParams.get("inLat"));
@@ -97,10 +114,10 @@ export default function AttendanceDataMappingPage() {
         divIcon({
           className: "bg-transparent border-none",
           html: `<div class="flex flex-col items-center justify-end w-full h-full pointer-events-none">
-                  <div class="px-2 py-1 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md border-2 border-white whitespace-nowrap inline-block pointer-events-auto" style="${isOverlapping ? 'margin-bottom: 42px;' : 'margin-bottom: 2px;'}">
+                  <div class="px-2 py-1 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md border-2 border-white whitespace-nowrap inline-block pointer-events-auto" style="${isOverlapping ? "margin-bottom: 42px;" : "margin-bottom: 2px;"}">
                     🏃 Pulang: ${name}
                   </div>
-                  <div class="w-4 h-4 bg-rose-500 rounded-full border-2 border-white shadow-md pointer-events-auto ${isOverlapping ? 'hidden' : ''}"></div>
+                  <div class="w-4 h-4 bg-rose-500 rounded-full border-2 border-white shadow-md pointer-events-auto ${isOverlapping ? "hidden" : ""}"></div>
                 </div>`,
           iconSize: [160, 50],
           iconAnchor: [80, 50],
@@ -241,6 +258,12 @@ export default function AttendanceDataMappingPage() {
                 </p>
                 <span className="text-xs text-emerald-300 font-mono font-medium">{checkInTime}</span>
               </div>
+              {checkInLocation && (
+                <div className="text-xs text-emerald-200 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/30 flex items-center gap-2">
+                  <Building className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="font-medium">{checkInLocation}</span>
+                </div>
+              )}
               <div className="text-xs text-zinc-300 bg-black/30 p-2.5 rounded-xl border border-emerald-500/10">
                 <span className="block text-[10px] text-zinc-500">Koordinat</span>
                 <span className="font-mono text-zinc-200">{checkIn.lat}, {checkIn.lng}</span>
@@ -265,6 +288,12 @@ export default function AttendanceDataMappingPage() {
                 </p>
                 <span className="text-xs text-rose-300 font-mono font-medium">{checkOutTime}</span>
               </div>
+              {checkOutLocation && (
+                <div className="text-xs text-rose-200 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/30 flex items-center gap-2">
+                  <Building className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="font-medium">{checkOutLocation}</span>
+                </div>
+              )}
               <div className="text-xs text-zinc-300 bg-black/30 p-2.5 rounded-xl border border-rose-500/10">
                 <span className="block text-[10px] text-zinc-500">Koordinat</span>
                 <span className="font-mono text-zinc-200">{checkOut.lat}, {checkOut.lng}</span>

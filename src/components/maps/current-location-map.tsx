@@ -12,12 +12,13 @@ type CurrentLocationMapProps = {
   mapTitle: string;
   focusOffset?: "none" | "up";
   zoomControlPlacement?: "default" | "underNotification";
-  office?: {
+  offices?: Array<{
+    id: string;
     latitude: number;
     longitude: number;
     radius: number;
     name?: string;
-  };
+  }>;
 };
 
 const MapContainer = dynamic(
@@ -51,7 +52,7 @@ export function CurrentLocationMap({
   mapTitle: _mapTitle,
   focusOffset = "none",
   zoomControlPlacement = "default",
-  office,
+  offices = [],
 }: CurrentLocationMapProps) {
   const [markerIcon, setMarkerIcon] = useState<DivIcon | null>(null);
   const [officeIcon, setOfficeIcon] = useState<any>(null);
@@ -144,29 +145,33 @@ export function CurrentLocationMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {office && officeIcon ? (
+        {offices && offices.length > 0 && officeIcon ? (
           <>
-            <Marker position={[office.latitude, office.longitude]} icon={officeIcon}>
-              <Popup>
-                <div className="space-y-2 text-sm text-slate-700">
-                  <div className="flex items-center gap-2 font-semibold text-sky-600">
-                    <MapPinned className="h-4 w-4" />
-                    Pusat Kantor {office.name ? `(${office.name})` : ''}
-                  </div>
-                  <p className="text-xs">Radius Absensi: {office.radius}m</p>
-                </div>
-              </Popup>
-            </Marker>
-            <Circle
-              center={[office.latitude, office.longitude]}
-              radius={office.radius}
-              pathOptions={{
-                color: "#38bdf8",
-                fillColor: "#0ea5e9",
-                fillOpacity: 0.2,
-                weight: 2,
-              }}
-            />
+            {offices.map((office) => (
+              <div key={office.id}>
+                <Marker position={[office.latitude, office.longitude]} icon={officeIcon}>
+                  <Popup>
+                    <div className="space-y-2 text-sm text-slate-700">
+                      <div className="flex items-center gap-2 font-semibold text-sky-600">
+                        <MapPinned className="h-4 w-4" />
+                        {office.name || 'Kantor'}
+                      </div>
+                      <p className="text-xs">Radius Absensi: {office.radius}m</p>
+                    </div>
+                  </Popup>
+                </Marker>
+                <Circle
+                  center={[office.latitude, office.longitude]}
+                  radius={office.radius}
+                  pathOptions={{
+                    color: "#38bdf8",
+                    fillColor: "#0ea5e9",
+                    fillOpacity: 0.2,
+                    weight: 2,
+                  }}
+                />
+              </div>
+            ))}
           </>
         ) : null}
 

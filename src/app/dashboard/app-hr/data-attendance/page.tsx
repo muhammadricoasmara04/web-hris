@@ -161,6 +161,8 @@ export default function HrAttendanceMonitoringPage() {
         lng: item.lng || item.longitude || (item as any).checkInLongitude,
         outLat: (item as any).checkOutLatitude,
         outLng: (item as any).checkOutLongitude,
+        checkInLocation: (item as any).checkInLocationName || null,
+        checkOutLocation: (item as any).checkOutLocationName || null,
       };
     }).filter((row) => {
       if (!searchQuery.trim()) return true;
@@ -300,7 +302,7 @@ export default function HrAttendanceMonitoringPage() {
                     <td className="px-3 py-3">
                       {row.lat && row.lng ? (
                         <Link
-                          href={`/dashboard/app-hr/data-attendance/data-mapping?inLat=${row.lat}&inLng=${row.lng}${row.outLat && row.outLng ? `&outLat=${row.outLat}&outLng=${row.outLng}` : ""}&name=${encodeURIComponent(row.name)}&nik=${encodeURIComponent(row.nik)}&dept=${encodeURIComponent(row.dept)}&date=${encodeURIComponent(row.date)}&checkIn=${encodeURIComponent(row.checkIn)}&checkOut=${encodeURIComponent(row.checkOut)}&status=${encodeURIComponent(row.status)}`}
+                          href={`/dashboard/app-hr/data-attendance/data-mapping?inLat=${row.lat}&inLng=${row.lng}${row.outLat && row.outLng ? `&outLat=${row.outLat}&outLng=${row.outLng}` : ""}${row.checkInLocation ? `&checkInLocation=${encodeURIComponent(row.checkInLocation)}` : ""}${row.checkOutLocation ? `&checkOutLocation=${encodeURIComponent(row.checkOutLocation)}` : ""}&name=${encodeURIComponent(row.name)}&nik=${encodeURIComponent(row.nik)}&dept=${encodeURIComponent(row.dept)}&date=${encodeURIComponent(row.date)}&checkIn=${encodeURIComponent(row.checkIn)}&checkOut=${encodeURIComponent(row.checkOut)}&status=${encodeURIComponent(row.status)}`}
                           className="rounded-lg bg-sky-500/20 px-3 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/30 transition-colors inline-block whitespace-nowrap"
                         >
                           Lihat Lokasi
