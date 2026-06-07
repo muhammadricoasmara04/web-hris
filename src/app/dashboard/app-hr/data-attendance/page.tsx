@@ -138,11 +138,11 @@ export default function HrAttendanceMonitoringPage() {
       });
     }
 
-    // Sort by date descending (newest first)
+    // Sort by updatedAt descending (most recently updated first at top of table)
     const sortedData = [...filteredData].sort((a, b) => {
-      const dateA = new Date(getDateField(a) || 0).getTime();
-      const dateB = new Date(getDateField(b) || 0).getTime();
-      return dateB - dateA;
+      const timeA = new Date((a as any).updatedAt || a.checkInTime || a.time || a.createdAt || 0).getTime();
+      const timeB = new Date((b as any).updatedAt || b.checkInTime || b.time || b.createdAt || 0).getTime();
+      return timeB - timeA;
     });
 
     return sortedData.map((item, index) => {
