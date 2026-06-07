@@ -27,53 +27,31 @@ type SidebarItem = {
   icon: LucideIcon;
   href?: string;
   soon?: boolean;
+  permission?: string;
 };
 
-const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
-  admin: [
-    {
-      id: "sidebar-link-admin-dashboard",
-      label: "Admin Dashboard",
-      icon: LayoutDashboard,
-      href: "/dashboard/admin",
-    },
-    {
-      id: "sidebar-link-users",
-      label: "Manajemen User",
-      icon: Users,
-      soon: true,
-    },
-    {
-      id: "sidebar-link-payroll",
-      label: "Payroll & Gaji",
-      icon: Wallet,
-      soon: true,
-    },
-    {
-      id: "sidebar-link-reports",
-      label: "Laporan Kehadiran",
-      icon: CalendarClock,
-      soon: true,
-    },
-  ],
+const primaryItemsByRole: Record<"hr" | "employee", SidebarItem[]> = {
   hr: [
     {
       id: "sidebar-link-hr-dashboard",
       label: "HR Dashboard",
       icon: LayoutDashboard,
       href: "/dashboard/app-hr",
+      permission: "VIEW_DASHBOARD_HR"
     },
     {
       id: "sidebar-link-hr-attendance",
       label: "Absensi Karyawan",
       icon: CalendarClock,
       href: "/dashboard/app-hr/data-attendance",
+      permission: "MANAGE_ATTENDANCE"
     },
     {
       id: "sidebar-link-hr-payroll",
       label: "Payroll & Gaji",
       icon: Wallet,
       soon: true,
+      permission: "MANAGE_PAYROLL"
     },
   ],
   employee: [
@@ -110,26 +88,35 @@ const primaryItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
   ],
 };
 
-const masterItemsByRole: Record<"admin" | "hr" | "employee", SidebarItem[]> = {
-  admin: [],
+const masterItemsByRole: Record<"hr" | "employee", SidebarItem[]> = {
   hr: [
     {
       id: "sidebar-link-hr-employees",
       label: "Data Karyawan",
       icon: Users,
       href: "/dashboard/app-hr/data-employees",
+      permission: "MANAGE_EMPLOYEE"
     },
     {
       id: "sidebar-link-hr-departments",
       label: "Departemen",
       icon: Building2,
       href: "/dashboard/app-hr/data-departements",
+      permission: "MANAGE_DEPARTMENT"
     },
     {
       id: "sidebar-link-hr-positions",
       label: "Jabatan",
       icon: Contact,
       href: "/dashboard/app-hr/data-position",
+      permission: "MANAGE_POSITION"
+    },
+    {
+      id: "sidebar-link-hr-roles",
+      label: "Role Sistem",
+      icon: ShieldCheck,
+      href: "/dashboard/app-hr/data-roles",
+      permission: "MANAGE_ROLE"
     },
   ],
   employee: [],
@@ -203,7 +190,6 @@ function checkIsActive(itemHref: string | undefined, currentPathname: string): b
   // Exact match for dashboard homes/roots
   const exactMatchRoutes = [
     "/dashboard/app-hr",
-    "/dashboard/admin",
     "/dashboard/employee"
   ];
   if (exactMatchRoutes.includes(itemHref)) {
@@ -227,29 +213,39 @@ export function DashboardSidebar({ onStartTransition }: { onStartTransition?: ()
   const rawUser = (userData?.data || userData?.user || userData) as any;
   const displayName = rawUser?.fullname || rawUser?.name || rawUser?.fullName || rawUser?.username || "User";
 
-  // Extract role from API, handle both string and object formats
-  let apiRole = "";
-  const roleData = rawUser?.role;
-
-  if (typeof roleData === "string") {
-    apiRole = roleData.toLowerCase();
-  } else if (roleData && typeof roleData === "object") {
-    apiRole = String((roleData as any).name || "").toLowerCase();
-  } else if (rawUser?.roleName) {
-    apiRole = String(rawUser.roleName).toLowerCase();
+  // Extract permissions from API response
+  let userPermissions: string[] = [];
+  if (Array.isArray(rawUser?.permissions)) {
+    userPermissions = rawUser.permissions; // Struktur dari login/token
+  } else if (rawUser?.role?.permissions && Array.isArray(rawUser.role.permissions)) {
+    userPermissions = rawUser.role.permissions.map((p: any) => p.action); // Struktur dari /api/auth/me
   }
 
-  const isUserHrOrAdmin = apiRole.includes("admin") || apiRole.includes("hr") || apiRole.includes("manager") || apiRole.includes("super");
-  const isHrisMode = isUserHrOrAdmin && (pathname.startsWith("/dashboard/app-hr") || pathname.startsWith("/dashboard/admin"));
+  // Superadmin bypass (kalau nama rolenya superadmin, beri akses penuh)
+  let apiRole = "";
+  if (typeof rawUser?.role === "string") apiRole = rawUser.role.toLowerCase();
+  else if (rawUser?.role?.name) apiRole = String(rawUser.role.name).toLowerCase();
+  const isSuperAdmin = apiRole === "superadmin";
 
-  const activeMenuRole: "admin" | "hr" | "employee" = isHrisMode
-    ? (apiRole.includes("admin") ? "admin" : "hr")
+  // isUserHrOrAdmin sekarang ditentukan jika dia bukan 'employee' DAN punya minimal 1 permission berawalan MANAGE atau VIEW_DASHBOARD_HR
+  const isUserHrOrAdmin = apiRole !== "employee" && (isSuperAdmin || userPermissions.some(p => p.startsWith("MANAGE_") || p === "VIEW_DASHBOARD_HR"));
+  const isHrisMode = isUserHrOrAdmin && pathname.startsWith("/dashboard/app-hr");
+
+  const activeMenuRole: "hr" | "employee" = isHrisMode
+    ? "hr"
     : "employee";
 
-  const primaryItems = primaryItemsByRole[activeMenuRole];
-  const masterItems = masterItemsByRole[activeMenuRole];
+  // Filter menu berdasarkan permission yang dimiliki user
+  const primaryItems = primaryItemsByRole[activeMenuRole].filter(item => 
+    !item.permission || isSuperAdmin || userPermissions.includes(item.permission)
+  );
+  
+  const masterItems = masterItemsByRole[activeMenuRole].filter(item => 
+    !item.permission || isSuperAdmin || userPermissions.includes(item.permission)
+  );
+
   const roleLabel = isHrisMode
-    ? (apiRole.includes("admin") ? "Administrator" : "HR Manager")
+    ? (isSuperAdmin ? "Administrator" : "HR Manager")
     : "Karyawan";
 
   return (

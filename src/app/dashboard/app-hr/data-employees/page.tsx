@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, UsersRound, Building2, UserCheck, UserPlus, Trash2, Loader2, Eye } from "lucide-react";
+import { Search, UsersRound, Building2, UserCheck, UserPlus, Trash2, Loader2, Eye, Pencil } from "lucide-react";
 import { useState, useMemo } from "react";
 import Swal from "sweetalert2";
 import { authFetch } from "@/services/authClient";
@@ -317,6 +317,13 @@ export default function HrEmployeeMonitoringPage() {
                           title="Detail Karyawan"
                         >
                           <Eye className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          href={`/dashboard/app-hr/data-employees/edit?id=${row.id}`}
+                          className="inline-flex items-center justify-center rounded-lg bg-sky-500/10 p-2 text-sky-400 hover:bg-sky-500/20 hover:text-sky-300 transition-colors"
+                          title="Edit Karyawan"
+                        >
+                          <Pencil className="h-4 w-4" />
                         </Link>
                         <button
                           onClick={() => handleDelete(row.id, row.name, row.nik)}
