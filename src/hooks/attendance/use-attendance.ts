@@ -45,7 +45,31 @@ export function useAttendance({ coordinates, locationLoading }: UseAttendancePro
 
     try {
       // Validasi sesi terlebih dahulu
-      await getMe();
+      const meData = await getMe();
+      const office = (meData?.data as any)?.radiusOffice;
+
+      if (office && typeof office.latitude === 'number' && typeof office.longitude === 'number' && typeof office.radius === 'number') {
+        const R = 6371e3; // metres
+        const lat1 = coordinates.lat;
+        const lon1 = coordinates.lng;
+        const lat2 = office.latitude;
+        const lon2 = office.longitude;
+        
+        const phi1 = lat1 * Math.PI/180;
+        const phi2 = lat2 * Math.PI/180;
+        const deltaPhi = (lat2-lat1) * Math.PI/180;
+        const deltaLambda = (lon2-lon1) * Math.PI/180;
+
+        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = Math.round(R * c); // in metres
+
+        if (distance > office.radius) {
+          throw new Error(`Anda berada di luar radius kantor ${office.name || ''}. Jarak Anda ${distance}m dari pusat kantor (Maksimal ${office.radius}m). Silakan mendekat ke lokasi absen.`);
+        }
+      }
 
       const payload = {
         latitude: coordinates.lat,

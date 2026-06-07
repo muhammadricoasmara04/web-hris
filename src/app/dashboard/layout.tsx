@@ -7,6 +7,7 @@ import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { refreshAccessToken } from "@/services/authClient";
 import { getAuthGuardToken, subscribeAuthStorage } from "@/utils/auth-storage";
+import Loader from "@/components/ui/loader-15";
 
 const getServerTokenSnapshot = (): string | null => null;
 
@@ -30,7 +31,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (!isTransitioning) return;
     const timer = setTimeout(() => {
       setIsTransitioning(false);
-    }, 5000);
+    }, 1200);
     return () => clearTimeout(timer);
   }, [isTransitioning]);
 
@@ -83,19 +84,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </div>
 
       {isTransitioning && (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/65 backdrop-blur-md transition-all duration-300 animate-in fade-in">
-          <div className="relative flex flex-col items-center gap-4 p-8 rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
-            <div className="absolute inset-0 rounded-3xl bg-sky-500/10 blur-xl animate-pulse" />
-            <div className="relative z-10 flex flex-col items-center gap-4">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-sky-500 border-t-transparent" />
-              <div className="flex flex-col items-center text-center">
-                <span className="text-sm font-bold text-white tracking-wide animate-pulse">
-                  Beralih Mode Dashboard
-                </span>
-                <span className="text-xs text-zinc-400 mt-1">
-                  Menyiapkan antarmuka dashboard Anda...
-                </span>
-              </div>
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 animate-in fade-in">
+          <div className="relative flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-[#0a0a0a]/80 p-8 shadow-2xl backdrop-blur-xl">
+            {/* Glow effect */}
+            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-sky-500/20 to-indigo-500/20 blur-xl pointer-events-none" />
+            
+            <div className="relative scale-[0.4] -my-14 flex items-center justify-center">
+              <Loader />
+            </div>
+            
+            <div className="text-center z-10">
+              <p className="text-sm font-semibold tracking-wider text-white">Beralih Mode Dashboard</p>
+              <span className="mt-1 block text-xs text-zinc-400">Menyiapkan antarmuka dashboard Anda...</span>
             </div>
           </div>
         </div>

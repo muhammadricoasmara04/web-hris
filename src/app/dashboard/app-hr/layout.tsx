@@ -47,6 +47,8 @@ export default function HrLayout({ children }: { children: React.ReactNode }) {
           router.replace("/dashboard/app-hr");
         } else if (pathname.includes("/data-departements") && !userPermissions.includes("MANAGE_DEPARTMENT")) {
           router.replace("/dashboard/app-hr");
+        } else if (pathname.includes("/data-office") && !userPermissions.includes("MANAGE_DEPARTMENT")) {
+          router.replace("/dashboard/app-hr");
         } else if (pathname.includes("/data-position") && !userPermissions.includes("MANAGE_POSITION")) {
           router.replace("/dashboard/app-hr");
         } else if (pathname.includes("/data-roles") && !userPermissions.includes("MANAGE_ROLE")) {

@@ -11,6 +11,8 @@ import { useAttendance, type AttendanceMode } from "@/hooks/attendance/use-atten
 import { AttendanceHistoryItem } from "@/services/attendanceService";
 import { Loader2, LogIn, LogOut, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getMe } from "@/services/authService";
 
 type AttendanceProgress = "not_checked_in" | "checked_in" | "checked_out";
 
@@ -173,6 +175,14 @@ export default function EmployeeAttendancePage() {
   }, [historyQuery.data]);
 
 
+  const { data: userProfile } = useQuery({
+    queryKey: ["auth-me"],
+    queryFn: getMe,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const radiusOffice = (userProfile?.data as any)?.radiusOffice;
+
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: colors.screen.base }}>
       {/* 1. Background Map */}
@@ -183,6 +193,7 @@ export default function EmployeeAttendancePage() {
           mapTitle="" // Title is empty as per screenshot design
           focusOffset="up"
           zoomControlPlacement="underNotification"
+          office={radiusOffice}
         />
         {/* Overlay for better readability at bottom */}
         <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{ background: colors.screen.mapOverlay }} />

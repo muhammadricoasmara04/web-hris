@@ -13,6 +13,7 @@ import {
   Users,
   Wallet,
   X,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -117,6 +118,13 @@ const masterItemsByRole: Record<"hr" | "employee", SidebarItem[]> = {
       icon: ShieldCheck,
       href: "/dashboard/app-hr/data-roles",
       permission: "MANAGE_ROLE"
+    },
+    {
+      id: "sidebar-link-hr-offices",
+      label: "Radius Kantor",
+      icon: MapPin,
+      href: "/dashboard/app-hr/data-office",
+      permission: "MANAGE_DEPARTMENT"
     },
   ],
   employee: [],

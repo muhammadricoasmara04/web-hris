@@ -12,6 +12,12 @@ type CurrentLocationMapProps = {
   mapTitle: string;
   focusOffset?: "none" | "up";
   zoomControlPlacement?: "default" | "underNotification";
+  office?: {
+    latitude: number;
+    longitude: number;
+    radius: number;
+    name?: string;
+  };
 };
 
 const MapContainer = dynamic(
@@ -28,10 +34,16 @@ const TileLayer = dynamic(
   () => import("react-leaflet").then((mod) => mod.TileLayer),
   { ssr: false },
 );
+const Circle = dynamic(() => import("react-leaflet").then((mod) => mod.Circle), {
+  ssr: false,
+});
 const ZoomControl = dynamic(
   () => import("react-leaflet").then((mod) => mod.ZoomControl),
   { ssr: false },
 );
+
+// Fix for default marker icons in Leaflet when using Next.js/Webpack
+import "leaflet/dist/leaflet.css";
 
 export function CurrentLocationMap({
   center,
@@ -39,8 +51,10 @@ export function CurrentLocationMap({
   mapTitle: _mapTitle,
   focusOffset = "none",
   zoomControlPlacement = "default",
+  office,
 }: CurrentLocationMapProps) {
   const [markerIcon, setMarkerIcon] = useState<DivIcon | null>(null);
+  const [officeIcon, setOfficeIcon] = useState<any>(null);
   const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -64,6 +78,17 @@ export function CurrentLocationMap({
           iconAnchor: [14, 14],
         }),
       );
+
+      import("leaflet").then((L) => {
+        setOfficeIcon(
+          L.icon({
+            iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+            shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+          })
+        );
+      });
     });
 
     return () => {
@@ -118,6 +143,32 @@ export function CurrentLocationMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {office && officeIcon ? (
+          <>
+            <Marker position={[office.latitude, office.longitude]} icon={officeIcon}>
+              <Popup>
+                <div className="space-y-2 text-sm text-slate-700">
+                  <div className="flex items-center gap-2 font-semibold text-sky-600">
+                    <MapPinned className="h-4 w-4" />
+                    Pusat Kantor {office.name ? `(${office.name})` : ''}
+                  </div>
+                  <p className="text-xs">Radius Absensi: {office.radius}m</p>
+                </div>
+              </Popup>
+            </Marker>
+            <Circle
+              center={[office.latitude, office.longitude]}
+              radius={office.radius}
+              pathOptions={{
+                color: "#38bdf8",
+                fillColor: "#0ea5e9",
+                fillOpacity: 0.2,
+                weight: 2,
+              }}
+            />
+          </>
+        ) : null}
 
         {markerIcon ? (
           <Marker position={[center.lat, center.lng]} icon={markerIcon}>

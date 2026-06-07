@@ -10,10 +10,10 @@ function LoaderContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Hide loader with a 3-second delay for smooth premium transition
+    // Hide loader with a 1.2-second delay for smooth premium transition
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 1200);
 
     return () => clearTimeout(timer);
   }, [pathname, searchParams]);

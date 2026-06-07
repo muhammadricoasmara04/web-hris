@@ -5,7 +5,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  
+
   --animate-fade-in: fade-in 1s ease-out forwards;
   --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-float: float 6s ease-in-out infinite;
@@ -14,6 +14,7 @@
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -24,6 +25,7 @@
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -31,13 +33,21 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0);
     }
+
     50% {
       transform: translateY(-10px);
     }
   }
+}
+
+html {
+  font-size: 85%;
+  zoom: 80%;
 }
 
 :root {
@@ -186,6 +196,7 @@ body {
 }
 
 @keyframes ping {
+
   75%,
   100% {
     transform: scale(1.9);
