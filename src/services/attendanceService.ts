@@ -27,12 +27,17 @@ export type AttendanceHistoryItem = {
   time?: string;
   locationName?: string;
   location?: string;
+  checkinName?: string;
+  checkoutName?: string;
   latitude?: number;
   longitude?: number;
   lat?: number;
   lng?: number;
+  _checkOutLat?: number;
+  _checkOutLng?: number;
   status?: string;
   createdAt?: string;
+  _virtualType?: "in" | "out";
   [key: string]: unknown;
 };
 
@@ -79,9 +84,13 @@ const normalizeHistoryItem = (raw: Record<string, unknown>): AttendanceHistoryIt
 
   const locationName = asText(raw.locationName ?? raw.location_name ?? raw.office_name ?? raw.office ?? raw.branch_name);
   const location = asText(raw.location ?? raw.address ?? raw.alamat ?? raw.place);
+  const checkinName = asText(raw.checkInLocationName ?? raw.checkinName ?? raw.checkin_name ?? raw.check_in_name);
+  const checkoutName = asText(raw.checkOutLocationName ?? raw.checkoutName ?? raw.checkout_name ?? raw.check_out_name);
 
   const latitude = asNumber(raw.latitude ?? raw.lat ?? raw.check_in_latitude ?? raw.checkin_latitude);
   const longitude = asNumber(raw.longitude ?? raw.lng ?? raw.lon ?? raw.check_in_longitude ?? raw.checkin_longitude);
+  const checkOutLat = asNumber(raw.checkOutLatitude ?? raw.check_out_latitude ?? raw.checkout_latitude);
+  const checkOutLng = asNumber(raw.checkOutLongitude ?? raw.check_out_longitude ?? raw.checkout_longitude);
 
   const status = asText(raw.status ?? raw.attendance_status ?? raw.note ?? raw.keterangan);
 
@@ -94,10 +103,14 @@ const normalizeHistoryItem = (raw: Record<string, unknown>): AttendanceHistoryIt
     time: asText(raw.time ?? raw.jam ?? checkInTime ?? checkOutTime),
     locationName,
     location,
+    checkinName,
+    checkoutName,
     latitude,
     longitude,
     lat: latitude,
     lng: longitude,
+    _checkOutLat: checkOutLat,
+    _checkOutLng: checkOutLng,
     status,
     createdAt,
   };

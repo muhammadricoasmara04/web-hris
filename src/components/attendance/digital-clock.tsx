@@ -18,10 +18,11 @@ export function DigitalClock({ className = "" }: { className?: string }) {
 
   const hours = time.getHours().toString().padStart(2, "0");
   const minutes = time.getMinutes().toString().padStart(2, "0");
+  const seconds = time.getSeconds().toString().padStart(2, "0");
 
   return (
     <div className={`font-sans tracking-tight ${className}`}>
-      {hours}:{minutes}
+      {hours}:{minutes}:{seconds}
     </div>
   );
 }

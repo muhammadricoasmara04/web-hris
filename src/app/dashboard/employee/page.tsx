@@ -49,8 +49,20 @@ export default function EmployeeAttendancePage() {
   };
 
   const formatHistoryLocation = (item: AttendanceHistoryItem) => {
+    const isClockIn = (item._virtualType || item.type) !== "out";
+
+    const specificName = isClockIn ? item.checkinName : item.checkoutName;
+    if (specificName) return specificName;
+
     if (item.locationName || item.location) {
       return String(item.locationName || item.location);
+    }
+
+    const checkoutLat = isClockIn ? null : (item._checkOutLat ?? null);
+    const checkoutLng = isClockIn ? null : (item._checkOutLng ?? null);
+
+    if (checkoutLat !== null && checkoutLng !== null) {
+      return `Lat ${checkoutLat.toFixed(6)}, Lng ${checkoutLng.toFixed(6)}`;
     }
 
     const lat =
@@ -182,7 +194,8 @@ export default function EmployeeAttendancePage() {
     retry: 1,
   });
 
-  const allOffices = (userProfile?.data as any)?.allOffices || [];
+  const responseData = userProfile?.data as { allOffices?: unknown[] } | undefined;
+  const allOffices = responseData?.allOffices || [];
 
   useEffect(() => {
     if (allOffices && allOffices.length > 0) {
@@ -251,7 +264,7 @@ export default function EmployeeAttendancePage() {
                   <CurrentDate />
                 </div>
 
-                <div className="mt-5 w-full px-2">
+                <div className="mt-5 w-full px-2 space-y-3">
                   {isCheckedOut ? (
                     <div
                       className="rounded-[24px] border border-emerald-300/30 bg-emerald-400/10 p-5 text-center text-sm font-semibold text-emerald-100"
@@ -259,25 +272,46 @@ export default function EmployeeAttendancePage() {
                       Terimakasih Sudah bekerja kerasa hari ini, sampai bertemu di hari selanjutnya
                     </div>
                   ) : (
-                    <button
-                      onClick={activeActionHandler}
-                      disabled={isSubmitting}
-                      className="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-[24px] p-3 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
-                      style={{
-                        background: activeActionStyles.background,
-                        color: activeActionStyles.text,
-                        boxShadow: activeActionStyles.shadow,
-                      }}
-                    >
-                      {activeActionPending ? (
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      ) : (
-                        <>
-                          <span className="text-lg font-extrabold tracking-tight">{activeActionLabel}</span>
-                          <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">{activeActionSubLabel}</span>
-                        </>
-                      )}
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleClockIn}
+                        disabled={isSubmitting || shouldShowClockOutAction}
+                        className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[24px] p-3 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                        style={{
+                          background: colors.actions.clockIn.background,
+                          color: colors.actions.clockIn.text,
+                          boxShadow: colors.actions.clockIn.shadow,
+                        }}
+                      >
+                        {clockInMutation.isPending ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          <>
+                            <span className="text-lg font-extrabold tracking-tight">Clock In</span>
+                            <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">Masuk Kerja</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={handleClockOut}
+                        disabled={isSubmitting || !shouldShowClockOutAction}
+                        className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[24px] p-3 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                        style={{
+                          background: colors.actions.clockOut.background,
+                          color: colors.actions.clockOut.text,
+                          boxShadow: colors.actions.clockOut.shadow,
+                        }}
+                      >
+                        {clockOutMutation.isPending ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          <>
+                            <span className="text-lg font-extrabold tracking-tight">Clock Out</span>
+                            <span className="text-[8px] font-bold uppercase tracking-widest opacity-70">Pulang Kerja</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -331,7 +365,7 @@ export default function EmployeeAttendancePage() {
 
                         return (
                           <div
-                            key={String(item.id ?? `${itemMode ?? "unknown"}-${index}`)}
+                            key={`${item.id ?? index}-${itemMode ?? "unknown"}`}
                             className="flex items-center justify-between rounded-2xl border p-4 backdrop-blur-sm shadow-sm"
                             style={{
                               background: isClockIn ? colors.history.card.background : colors.history.cardMuted.background,
