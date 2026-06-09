@@ -72,13 +72,13 @@ const primaryItemsByRole: Record<"hr" | "employee", SidebarItem[]> = {
       id: "sidebar-link-employee-leave",
       label: "Pengajuan Cuti",
       icon: CalendarClock,
-      href: "/dashboard/leave",
+      href: "/dashboard/employee/leave",
     },
     {
       id: "sidebar-link-employee-history",
       label: "Riwayat Absensi",
       icon: CalendarClock,
-      href: "/dashboard/historyattendance",
+      href: "/dashboard/employee/historyattendance",
     },
     {
       id: "sidebar-link-employee-payroll",
@@ -217,22 +217,37 @@ export function DashboardSidebar({ onStartTransition }: { onStartTransition?: ()
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  interface UserProfileData {
+    fullname?: string;
+    name?: string;
+    fullName?: string;
+    username?: string;
+    permissions?: string[];
+    role?: string | {
+      name?: string;
+      permissions?: { action: string }[];
+    };
+  }
+
   // Extract display name
-  const rawUser = (userData?.data || userData?.user || userData) as any;
+  const rawUser = (userData?.data || userData?.user || userData) as UserProfileData | undefined;
   const displayName = rawUser?.fullname || rawUser?.name || rawUser?.fullName || rawUser?.username || "User";
 
   // Extract permissions from API response
   let userPermissions: string[] = [];
   if (Array.isArray(rawUser?.permissions)) {
     userPermissions = rawUser.permissions; // Struktur dari login/token
-  } else if (rawUser?.role?.permissions && Array.isArray(rawUser.role.permissions)) {
-    userPermissions = rawUser.role.permissions.map((p: any) => p.action); // Struktur dari /api/auth/me
+  } else if (rawUser?.role && typeof rawUser.role === "object" && Array.isArray(rawUser.role.permissions)) {
+    userPermissions = rawUser.role.permissions.map((p) => p.action); // Struktur dari /api/auth/me
   }
 
   // Superadmin bypass (kalau nama rolenya superadmin, beri akses penuh)
   let apiRole = "";
-  if (typeof rawUser?.role === "string") apiRole = rawUser.role.toLowerCase();
-  else if (rawUser?.role?.name) apiRole = String(rawUser.role.name).toLowerCase();
+  if (typeof rawUser?.role === "string") {
+    apiRole = rawUser.role.toLowerCase();
+  } else if (rawUser?.role && typeof rawUser.role === "object" && rawUser.role.name) {
+    apiRole = String(rawUser.role.name).toLowerCase();
+  }
   const isSuperAdmin = apiRole === "superadmin";
 
   // isUserHrOrAdmin sekarang ditentukan jika dia bukan 'employee' DAN punya minimal 1 permission berawalan MANAGE atau VIEW_DASHBOARD_HR
@@ -244,11 +259,11 @@ export function DashboardSidebar({ onStartTransition }: { onStartTransition?: ()
     : "employee";
 
   // Filter menu berdasarkan permission yang dimiliki user
-  const primaryItems = primaryItemsByRole[activeMenuRole].filter(item => 
+  const primaryItems = primaryItemsByRole[activeMenuRole].filter(item =>
     !item.permission || isSuperAdmin || userPermissions.includes(item.permission)
   );
-  
-  const masterItems = masterItemsByRole[activeMenuRole].filter(item => 
+
+  const masterItems = masterItemsByRole[activeMenuRole].filter(item =>
     !item.permission || isSuperAdmin || userPermissions.includes(item.permission)
   );
 

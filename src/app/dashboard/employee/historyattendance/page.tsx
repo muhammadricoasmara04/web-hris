@@ -145,14 +145,14 @@ export default function HistoryAttendancePage() {
           <div className="grid gap-3">
             {filteredHistory.map((item, index) => {
               const itemType = String(item.type || "").toLowerCase();
-              const isClockIn = (item as any)._virtualType 
-                ? (item as any)._virtualType === "in"
+              const isClockIn = item._virtualType 
+                ? item._virtualType === "in"
                 : (itemType === "in" || itemType.includes("masuk") || (Boolean(item.checkInTime) && !item.checkOutTime));
 
               return (
                 <article
                   id={`attendance-history-item-${index}`}
-                  key={String(item.id ?? `${itemType}-${index}-${(item as any)._virtualType ?? ""}`)}
+                  key={String(item.id ?? `${itemType}-${index}-${item._virtualType ?? ""}`)}
                   className="group rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-sky-300/40 hover:bg-white/[0.09]"
                 >
                   <div className="flex items-start justify-between gap-4">

@@ -45,7 +45,7 @@ export default function EmployeeAttendancePage() {
     const date = new Date(raw);
     if (Number.isNaN(date.getTime())) return String(raw);
 
-    return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   };
 
   const formatHistoryLocation = (item: AttendanceHistoryItem) => {
@@ -157,19 +157,26 @@ export default function EmployeeAttendancePage() {
 
   const latestHistoryItems = useMemo(() => {
     const items = historyQuery.data ?? [];
+    const todayWibKey = getWibDateKey(new Date(nowTick));
+
+    const todayItems = todayWibKey
+      ? items.filter((item) => getHistoryWibDateKey(item) === todayWibKey)
+      : [];
     
     // We want to unroll items that have both checkInTime and checkOutTime 
     // into two separate entries so they show up as two cards.
     const unrolled: AttendanceHistoryItem[] = [];
     
-    items.forEach((item) => {
+    todayItems.forEach((item) => {
       const hasIn = Boolean(item.checkInTime);
       const hasOut = Boolean(item.checkOutTime);
       
       if (hasIn && hasOut) {
         // Create two virtual items
-        unrolled.push({ ...item, type: "in", time: item.checkInTime, _virtualType: "in" });
-        unrolled.push({ ...item, type: "out", time: item.checkOutTime, _virtualType: "out" });
+        // We omit checkInTime and checkOutTime so formatHistoryTime doesn't get confused
+        const { checkInTime, checkOutTime, ...rest } = item;
+        unrolled.push({ ...rest, type: "in", time: checkInTime, _virtualType: "in" });
+        unrolled.push({ ...rest, type: "out", time: checkOutTime, _virtualType: "out" });
       } else {
         unrolled.push(item);
       }
@@ -184,7 +191,7 @@ export default function EmployeeAttendancePage() {
         return aTime - bTime; // Oldest first (In -> Out)
       })
       .slice(-2); // Take the last 2 items (latest 2 actions)
-  }, [historyQuery.data]);
+  }, [historyQuery.data, nowTick]);
 
 
   const { data: userProfile, isLoading: isProfileLoading } = useQuery({
@@ -194,7 +201,9 @@ export default function EmployeeAttendancePage() {
     retry: 1,
   });
 
-  const responseData = userProfile?.data as { allOffices?: unknown[] } | undefined;
+  const responseData = userProfile?.data as { 
+    allOffices?: { id: string; latitude: number; longitude: number; radius: number; name?: string; }[] 
+  } | undefined;
   const allOffices = responseData?.allOffices || [];
 
   useEffect(() => {
@@ -326,7 +335,7 @@ export default function EmployeeAttendancePage() {
                     </p>
                     <Link
                       id="employee-history-view-all-link"
-                      href="/dashboard/historyattendance"
+                      href="/dashboard/employee/historyattendance"
                       className="text-[10px] font-bold uppercase tracking-wider"
                       style={{ color: colors.history.viewAll }}
                     >

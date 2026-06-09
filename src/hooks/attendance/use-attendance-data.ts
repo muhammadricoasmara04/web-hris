@@ -26,38 +26,47 @@ const normalizeStatus = (value?: string, hasCheckOut?: boolean) => {
 };
 
 const getDisplayName = (item: AttendanceHistoryItem) => {
-  const raw = (
-    item.employee?.name ||
-    (item as any).employeeName ||
-    (item as any).name ||
-    (item as any).fullname ||
-    (item as any).fullName ||
-    (item as any).userName ||
-    (item as any).username
-  ) as string | undefined;
+  const emp = item.employee as { name?: string } | undefined;
+  const raw =
+    emp?.name ??
+    item.employeeName ??
+    item.name ??
+    item.fullname ??
+    item.fullName ??
+    item.userName ??
+    item.username;
 
-  return raw || "-";
+  return typeof raw === "string" ? raw : "-";
 };
 
-const getDepartment = (item: any) => {
-  const raw = (
-    item.employee?.department?.name ||
-    item.employee?.department ||
-    item.department?.name ||
+const getDepartment = (item: AttendanceHistoryItem) => {
+  const emp = item.employee as { department?: string | { name?: string } } | undefined;
+  const dept = item.department as { name?: string } | undefined;
+  
+  let raw = "";
+  if (emp?.department) {
+    if (typeof emp.department === "object") {
+      raw = emp.department.name || "";
+    } else {
+      raw = emp.department;
+    }
+  }
+
+  const fallback =
+    raw ||
+    dept?.name ||
     item.departmentName ||
     item.department ||
     item.division ||
-    item.team
-  ) as string | undefined | null;
+    item.team;
 
-  return raw && typeof raw === "string" ? raw : "-";
+  return typeof fallback === "string" ? fallback : "-";
 };
 
 const getNik = (item: AttendanceHistoryItem) => {
-  const raw = (item.nik || item.employee?.nik || (item as any).employeeNIK || (item as any).employeeNik) as
-    | string
-    | undefined;
-  return raw || "-";
+  const emp = item.employee as { nik?: string } | undefined;
+  const raw = item.nik || emp?.nik || item.employeeNIK || item.employeeNik;
+  return typeof raw === "string" ? raw : "-";
 };
 
 const getDateField = (item: AttendanceHistoryItem) =>
@@ -100,10 +109,9 @@ export function useAttendanceData({ period, startDate, endDate, searchTerm }: Us
     queryKey: ["attendance", "all", { period, startDate, endDate, searchTerm }],
     queryFn: () =>
       getAttendanceRecords({
-        period,
+        period: period === "year" ? "custom" : period,
         date: startDate,
         endDate: endDate !== startDate ? endDate : undefined,
-        search: searchTerm,
       }),
     staleTime: 60 * 1000,
   });
@@ -143,10 +151,10 @@ export function useAttendanceData({ period, startDate, endDate, searchTerm }: Us
     return filteredData.map((item, index) => {
       const recordId = String(item.id ?? `ATT-${index + 1}`);
       const mapsUrl = getMapsUrl(
-        item.checkInLatitude,
-        item.checkInLongitude,
-        item.checkOutLatitude,
-        item.checkOutLongitude,
+        item.checkInLatitude as number | undefined,
+        item.checkInLongitude as number | undefined,
+        item.checkOutLatitude as number | undefined,
+        item.checkOutLongitude as number | undefined,
       );
 
       return {

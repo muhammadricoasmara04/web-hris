@@ -21,7 +21,7 @@ const BASE_MODAL_OPTIONS: SweetAlertOptions = {
 const buildModalOptions = (options: SweetAlertOptions = {}): SweetAlertOptions => ({
   ...BASE_MODAL_OPTIONS,
   ...options,
-});
+} as SweetAlertOptions);
 
 export const modal = {
   fire: (options: SweetAlertOptions): Promise<SweetAlertResult> =>

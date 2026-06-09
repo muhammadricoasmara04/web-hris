@@ -13,17 +13,17 @@ const navItems = [
   {
     label: "Cuti",
     icon: CalendarPlus2,
-    href: "/dashboard/leave",
+    href: "/dashboard/employee/leave",
   },
   {
     label: "History",
     icon: History,
-    href: "/dashboard/historyattendance",
+    href: "/dashboard/employee/historyattendance",
   },
   {
     label: "Profil",
     icon: User,
-    href: "/dashboard/profile",
+    href: "/dashboard/employee/profile",
   },
 ];
 
