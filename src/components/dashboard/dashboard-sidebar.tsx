@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Building2,
   CalendarClock,
+  ClipboardList,
   Contact,
   LayoutDashboard,
   LogOut,
@@ -70,8 +71,8 @@ const primaryItemsByRole: Record<"hr" | "employee", SidebarItem[]> = {
     },
     {
       id: "sidebar-link-employee-leave",
-      label: "Pengajuan Cuti",
-      icon: CalendarClock,
+      label: "Pengajuan",
+      icon: ClipboardList,
       href: "/dashboard/employee/leave",
     },
     {
