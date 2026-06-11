@@ -211,3 +211,17 @@ export async function deleteLeaveRequest(id: string | number): Promise<{ message
 
   return { message: json?.message || "Pengajuan berhasil dihapus." };
 }
+
+export async function cancelLeaveRequest(id: string | number): Promise<{ message: string }> {
+  const response = await authFetch(buildApiUrl(`/api/leaves/${id}/cancel`), {
+    method: "PATCH",
+  });
+
+  const json = (await response.json().catch(() => null)) as { message?: string } | null;
+
+  if (!response.ok) {
+    throw new Error(json?.message || "Gagal membatalkan pengajuan.");
+  }
+
+  return { message: json?.message || "Pengajuan berhasil dibatalkan." };
+}

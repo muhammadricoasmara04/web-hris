@@ -20,6 +20,8 @@ import {
 import { useState, type FormEvent } from "react";
 import type { LeaveSubmissionItem, LeaveType } from "@/services/leaveService";
 import { dateFormater } from "@/utils/dateFormater";
+import modal from "@/constants/modal";
+import Loader from "@/components/ui/loader-15";
 
 /* ─── Tab definitions ─── */
 type TabId = "sick" | "annual" | "permit";
@@ -55,7 +57,13 @@ const TYPE_MAP: Record<TabId, LeaveType> = {
 };
 
 const getStatusLabel = (status: string) =>
-  status === "approved" ? "Disetujui" : status === "rejected" ? "Ditolak" : "Menunggu";
+  status === "approved"
+    ? "Disetujui"
+    : status === "rejected"
+    ? "Ditolak"
+    : status === "cancelled"
+    ? "Dibatalkan"
+    : "Menunggu";
 
 const getAttachmentHref = (item: LeaveSubmissionItem) => item.attachmentUrl || item.proofUrl;
 
@@ -65,10 +73,11 @@ export default function LeavePage() {
     balanceQuery,
     requestsQuery,
     submitMutation,
-    deleteMutation,
+    cancelMutation,
     balance,
     requests,
     isSubmitting,
+    isCancelling,
   } = useMyLeave();
 
   const [activeTab, setActiveTab] = useState<TabId>("sick");
@@ -94,22 +103,41 @@ export default function LeavePage() {
       return;
     }
 
-    await submitMutation.mutateAsync({
-      startDate,
-      endDate,
-      type: currentType,
-      reason: reason.trim(),
-      attachment: needsAttachment ? attachment : null,
-    });
-    setStartDate("");
-    setEndDate("");
-    setReason("");
-    setAttachment(null);
-    setAttachmentError("");
+    try {
+      await submitMutation.mutateAsync({
+        startDate,
+        endDate,
+        type: currentType,
+        reason: reason.trim(),
+        attachment: needsAttachment ? attachment : null,
+      });
+      modal.success("Berhasil", "Pengajuan berhasil dikirim.");
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+      setAttachment(null);
+      setAttachmentError("");
+    } catch (error) {
+      modal.error("Gagal Mengirim", error instanceof Error ? error.message : "Terjadi kesalahan saat mengirim pengajuan.");
+    }
   };
 
-  const handleDelete = async (id: string | number) => {
-    await deleteMutation.mutateAsync(id);
+  const handleCancel = async (id: string | number) => {
+    const confirmResult = await modal.confirm({
+      title: "Batalkan Pengajuan?",
+      text: "Apakah Anda yakin ingin membatalkan pengajuan ini?",
+      confirmButtonText: "Ya, Batalkan",
+      cancelButtonText: "Tidak",
+    });
+
+    if (confirmResult.isConfirmed) {
+      try {
+        await cancelMutation.mutateAsync(id);
+        modal.success("Berhasil", "Pengajuan berhasil dibatalkan.");
+      } catch (error) {
+        modal.error("Gagal", error instanceof Error ? error.message : "Terjadi kesalahan saat membatalkan pengajuan.");
+      }
+    }
   };
 
   const loading = balanceQuery.isLoading || requestsQuery.isLoading;
@@ -308,6 +336,7 @@ export default function LeavePage() {
                 filteredRequests.slice(0, 6).map((item, idx) => {
                   const approved = item.status === "approved";
                   const rejected = item.status === "rejected";
+                  const cancelled = item.status === "cancelled";
                   const pending = item.status === "pending";
                   return (
                     <button
@@ -333,7 +362,7 @@ export default function LeavePage() {
                             <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs">
                               {approved ? (
                                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
-                              ) : rejected ? (
+                              ) : rejected || cancelled ? (
                                 <XCircle className="h-3.5 w-3.5 text-rose-300" />
                               ) : (
                                 <CalendarDays className="h-3.5 w-3.5 text-amber-200" />
@@ -347,27 +376,18 @@ export default function LeavePage() {
                           </div>
                         </div>
 
-                        {/* Delete — only for pending items */}
+                        {/* Cancel — only for pending items */}
                         {pending && (
-                          <span
-                            role="button"
-                            tabIndex={0}
+                          <button
+                            type="button"
                             onClick={(event) => {
                               event.stopPropagation();
-                              handleDelete(item.id ?? idx);
+                              handleCancel(item.id ?? idx);
                             }}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                handleDelete(item.id ?? idx);
-                              }
-                            }}
-                            aria-label="Hapus pengajuan"
-                            className="shrink-0 rounded-lg p-1.5 text-zinc-500 opacity-0 transition-all hover:bg-rose-500/20 hover:text-rose-300 group-hover:opacity-100"
+                            className="shrink-0 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </span>
+                            Batal
+                          </button>
                         )}
                       </div>
                     </button>
@@ -427,7 +447,7 @@ export default function LeavePage() {
                     <p className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
                       {selectedRequest.status === "approved" ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                      ) : selectedRequest.status === "rejected" ? (
+                      ) : selectedRequest.status === "rejected" || selectedRequest.status === "cancelled" ? (
                         <XCircle className="h-4 w-4 text-rose-300" />
                       ) : (
                         <CalendarDays className="h-4 w-4 text-amber-200" />
@@ -516,6 +536,25 @@ export default function LeavePage() {
             </div>
           </div>
         ) : null}
+
+        {(isCancelling || isSubmitting) && (
+          <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
+            <div className="relative flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-[#0a0a0a]/80 p-8 shadow-2xl backdrop-blur-xl">
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-sky-500/20 to-indigo-500/20 blur-xl pointer-events-none" />
+              <div className="relative scale-[0.4] -my-14 flex items-center justify-center">
+                <Loader />
+              </div>
+              <div className="text-center z-10">
+                <p className="text-sm font-semibold tracking-wider text-white">
+                  {isSubmitting ? "Mengirim Pengajuan" : "Membatalkan Pengajuan"}
+                </p>
+                <span className="mt-1 block text-xs text-zinc-400">
+                  {isSubmitting ? "Sedang memproses pengajuan Anda..." : "Sedang memproses pembatalan pengajuan Anda..."}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

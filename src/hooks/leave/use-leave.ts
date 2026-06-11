@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
   deleteLeaveRequest,
+  cancelLeaveRequest,
   getMyLeaveBalance,
   getMyLeaveRequests,
   submitLeaveRequest,
@@ -47,6 +48,14 @@ export function useMyLeave() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (id: string | number) => cancelLeaveRequest(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: leaveKeys.my });
+      queryClient.invalidateQueries({ queryKey: leaveKeys.balance });
+    },
+  });
+
   const stats = useMemo(() => {
     const items = requestsQuery.data ?? [];
     return {
@@ -62,6 +71,7 @@ export function useMyLeave() {
     balanceQuery,
     submitMutation,
     deleteMutation,
+    cancelMutation,
     stats,
     requests: (requestsQuery.data ?? []) as LeaveSubmissionItem[],
     balance:
@@ -69,5 +79,6 @@ export function useMyLeave() {
       ({ total: 0, used: 0, remaining: 0 } satisfies LeaveBalanceSummary),
     isSubmitting: submitMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    isCancelling: cancelMutation.isPending,
   };
 }
