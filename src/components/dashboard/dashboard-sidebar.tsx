@@ -49,6 +49,13 @@ const primaryItemsByRole: Record<"hr" | "employee", SidebarItem[]> = {
       permission: "MANAGE_ATTENDANCE"
     },
     {
+      id: "sidebar-link-hr-leave",
+      label: "Pengajuan Cuti/Izin",
+      icon: ClipboardList,
+      href: "/dashboard/app-hr/data-leave",
+      permission: "MANAGE_LEAVE"
+    },
+    {
       id: "sidebar-link-hr-payroll",
       label: "Payroll & Gaji",
       icon: Wallet,

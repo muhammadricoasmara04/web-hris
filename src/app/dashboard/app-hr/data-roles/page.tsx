@@ -17,10 +17,25 @@ const permissionLabels: Record<string, string> = {
   "MANAGE_POSITION": "Kelola Jabatan",
   "MANAGE_ATTENDANCE": "Kelola Absensi Karyawan",
   "MANAGE_PAYROLL": "Kelola Payroll & Gaji",
+  "MANAGE_LEAVE": "Kelola Pengajuan Cuti/Izin",
 };
 
 function formatPermission(action: string) {
   return permissionLabels[action] || action.replace(/_/g, " ");
+}
+
+interface PermissionItem {
+  id: string;
+  action: string;
+  description?: string;
+}
+
+interface RoleItem {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt?: string;
+  permissions?: PermissionItem[];
 }
 
 export default function DataRolesPage() {
@@ -37,24 +52,24 @@ export default function DataRolesPage() {
   const [editRoleDesc, setEditRoleDesc] = useState("");
   const [editRolePermissions, setEditRolePermissions] = useState<string[]>([]);
 
-  const { data: roles = [], isLoading, isError } = useQuery({
+  const { data: roles = [], isLoading, isError } = useQuery<RoleItem[]>({
     queryKey: ["roles"],
     queryFn: async () => {
       const res = await authFetch(buildApiUrl("/api/roles"));
       if (!res.ok) throw new Error("Gagal memuat roles");
       const json = await res.json();
-      return (Array.isArray(json) ? json : json.data || []) as any[];
+      return (Array.isArray(json) ? json : json.data || []) as RoleItem[];
     },
     staleTime: 60 * 1000,
   });
 
-  const { data: allPermissions = [] } = useQuery({
+  const { data: allPermissions = [] } = useQuery<PermissionItem[]>({
     queryKey: ["permissions"],
     queryFn: async () => {
       const res = await authFetch(buildApiUrl("/api/permissions"));
       if (!res.ok) return [];
       const json = await res.json();
-      return (Array.isArray(json) ? json : json.data || []) as any[];
+      return (Array.isArray(json) ? json : json.data || []) as PermissionItem[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -95,7 +110,7 @@ export default function DataRolesPage() {
         confirmButtonColor: '#0ea5e9',
       });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       Swal.fire({
         title: "Gagal!",
         text: err.message,
@@ -137,7 +152,7 @@ export default function DataRolesPage() {
         confirmButtonColor: '#0ea5e9',
       });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       Swal.fire({
         title: "Gagal!",
         text: err.message,
@@ -171,7 +186,7 @@ export default function DataRolesPage() {
         confirmButtonColor: '#0ea5e9',
       });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       Swal.fire({
         title: "Gagal!",
         text: err.message,
@@ -193,11 +208,11 @@ export default function DataRolesPage() {
     });
   };
 
-  const handleEditClick = (role: any) => {
+  const handleEditClick = (role: RoleItem) => {
     setEditRoleId(role.id);
     setEditRoleName(role.name || "");
     setEditRoleDesc(role.description || "");
-    setEditRolePermissions(role.permissions?.map((p: any) => p.id) || []);
+    setEditRolePermissions(role.permissions?.map((p: PermissionItem) => p.id) || []);
     setIsEditModalOpen(true);
   };
 
